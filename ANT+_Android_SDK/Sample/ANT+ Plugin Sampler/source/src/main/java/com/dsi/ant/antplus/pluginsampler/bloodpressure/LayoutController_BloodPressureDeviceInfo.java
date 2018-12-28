@@ -43,17 +43,17 @@ public class LayoutController_BloodPressureDeviceInfo implements Closeable
         this.viewGroup_Parent = viewGroup_Parent;
         this.view_layout = inflator.inflate(R.layout.layout_device_info, null);
 
-        TextView textView_Timestamp = (TextView)view_layout.findViewById(R.id.textView_Timestamp);
-        TextView textView_DeviceIndex = (TextView)view_layout.findViewById(R.id.textView_DeviceIndex);
-        TextView textView_DeviceType = (TextView)view_layout.findViewById(R.id.textView_DeviceType);
-        TextView textView_Manufacturer = (TextView)view_layout.findViewById(R.id.textView_Manufacturer);
-        TextView textView_SerialNumber = (TextView)view_layout.findViewById(R.id.textView_SerialNumber);
-        TextView textView_Product = (TextView)view_layout.findViewById(R.id.textView_Product);
-        TextView textView_SoftwareVersion = (TextView)view_layout.findViewById(R.id.textView_SoftwareVersion);
-        TextView textView_HardwareVersion = (TextView)view_layout.findViewById(R.id.textView_HardwareVersion);
-        TextView textView_CumulativeOperatingTime = (TextView)view_layout.findViewById(R.id.textView_CumulativeOperatingTime);
-        TextView textView_BatteryVoltage = (TextView)view_layout.findViewById(R.id.textView_BatteryVoltage);
-        TextView textView_BatteryStatus = (TextView)view_layout.findViewById(R.id.textView_BatteryStatus);
+        TextView textView_Timestamp = view_layout.findViewById(R.id.textView_Timestamp);
+        TextView textView_DeviceIndex = view_layout.findViewById(R.id.textView_DeviceIndex);
+        TextView textView_DeviceType = view_layout.findViewById(R.id.textView_DeviceType);
+        TextView textView_Manufacturer = view_layout.findViewById(R.id.textView_Manufacturer);
+        TextView textView_SerialNumber = view_layout.findViewById(R.id.textView_SerialNumber);
+        TextView textView_Product = view_layout.findViewById(R.id.textView_Product);
+        TextView textView_SoftwareVersion = view_layout.findViewById(R.id.textView_SoftwareVersion);
+        TextView textView_HardwareVersion = view_layout.findViewById(R.id.textView_HardwareVersion);
+        TextView textView_CumulativeOperatingTime = view_layout.findViewById(R.id.textView_CumulativeOperatingTime);
+        TextView textView_BatteryVoltage = view_layout.findViewById(R.id.textView_BatteryVoltage);
+        TextView textView_BatteryStatus = view_layout.findViewById(R.id.textView_BatteryStatus);
 
         //NOTE: All linked data messages must have the SAME timestamp
         if((fitDevInfoMsg.getTimestamp() != null) && (!fitDevInfoMsg.getTimestamp().getTimestamp().equals(DateTime.INVALID)))

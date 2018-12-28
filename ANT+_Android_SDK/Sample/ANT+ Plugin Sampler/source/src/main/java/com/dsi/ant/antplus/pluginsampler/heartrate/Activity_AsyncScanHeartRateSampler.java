@@ -12,7 +12,6 @@ package com.dsi.ant.antplus.pluginsampler.heartrate;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -22,7 +21,6 @@ import com.dsi.ant.antplus.pluginsampler.R;
 import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc;
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceState;
 import com.dsi.ant.plugins.antplus.pcc.defines.RequestAccessResult;
-import com.dsi.ant.plugins.antplus.pccbase.AntPluginPcc.IPluginAccessResultReceiver;
 import com.dsi.ant.plugins.antplus.pccbase.AsyncScanController;
 import com.dsi.ant.plugins.antplus.pccbase.AsyncScanController.AsyncScanResultDeviceInfo;
 import com.dsi.ant.plugins.antplus.pccbase.AsyncScanController.IAsyncScanResultReceiver;
@@ -55,40 +53,27 @@ public class Activity_AsyncScanHeartRateSampler extends Activity_HeartRateDispla
     {
         setContentView(com.dsi.ant.antplus.pluginsampler.R.layout.activity_async_scan);
 
-        mTextView_Status = (TextView)findViewById(R.id.textView_Status);
+        mTextView_Status = findViewById(R.id.textView_Status);
         mTextView_Status.setText("Scanning for heart rate devices asynchronously...");
 
-        mAlreadyConnectedDeviceInfos = new ArrayList<AsyncScanController.AsyncScanResultDeviceInfo>();
-        mScannedDeviceInfos = new ArrayList<AsyncScanController.AsyncScanResultDeviceInfo>();
+        mAlreadyConnectedDeviceInfos = new ArrayList<>();
+        mScannedDeviceInfos = new ArrayList<>();
 
         //Setup already connected devices list
-        adapter_connDevNameList = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1);
-        ListView listView_alreadyConnectedDevs = (ListView)findViewById(R.id.listView_AlreadyConnectedDevices);
+        adapter_connDevNameList = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1);
+        ListView listView_alreadyConnectedDevs = findViewById(R.id.listView_AlreadyConnectedDevices);
         listView_alreadyConnectedDevs.setAdapter(adapter_connDevNameList);
-        listView_alreadyConnectedDevs.setOnItemClickListener(new OnItemClickListener()
-                {
-                    //Return the id of the selected already connected device
-                    @Override
-                    public void onItemClick(AdapterView<?> parent, View view, int pos, long id)
-                    {
-                        requestConnectToResult(mAlreadyConnectedDeviceInfos.get(pos));
-                    }
-                });
+        listView_alreadyConnectedDevs.setOnItemClickListener((AdapterView<?> parent, View view, int pos, long id) ->
+                        requestConnectToResult(mAlreadyConnectedDeviceInfos.get(pos)));
 
 
         //Setup found devices display list
-        adapter_devNameList = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1);
-        ListView listView_Devices = (ListView)findViewById(R.id.listView_FoundDevices);
+        adapter_devNameList = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, android.R.id.text1);
+        ListView listView_Devices = findViewById(R.id.listView_FoundDevices);
         listView_Devices.setAdapter(adapter_devNameList);
-        listView_Devices.setOnItemClickListener(new OnItemClickListener()
-                {
-                    //Return the id of the selected already connected device
-                    @Override
-                    public void onItemClick(AdapterView<?> parent, View view, int pos, long id)
-                    {
-                        requestConnectToResult(mScannedDeviceInfos.get(pos));
-                    }
-                });
+        listView_Devices.setOnItemClickListener(
+                (AdapterView<?> parent, View view, int pos, long id) ->
+                        requestConnectToResult(mScannedDeviceInfos.get(pos)));
     }
 
     /**
@@ -98,40 +83,27 @@ public class Activity_AsyncScanHeartRateSampler extends Activity_HeartRateDispla
     protected void requestConnectToResult(final AsyncScanResultDeviceInfo asyncScanResultDeviceInfo)
     {
         //Inform the user we are connecting
-        runOnUiThread(new Runnable()
-                {
-                    public void run()
-                    {
-                        mTextView_Status.setText("Connecting to " + asyncScanResultDeviceInfo.getDeviceDisplayName());
-                        releaseHandle = hrScanCtrl.requestDeviceAccess(asyncScanResultDeviceInfo,
-                                new IPluginAccessResultReceiver<AntPlusHeartRatePcc>()
-                                {
-                                @Override
-                                public void onResultReceived(AntPlusHeartRatePcc result,
-                                    RequestAccessResult resultCode, DeviceState initialDeviceState)
-                                {
-                                    if(resultCode == RequestAccessResult.SEARCH_TIMEOUT)
-                                    {
-                                        //On a connection timeout the scan automatically resumes, so we inform the user, and go back to scanning
-                                        runOnUiThread(new Runnable()
-                                        {
-                                            public void run()
-                                            {
-                                                Toast.makeText(Activity_AsyncScanHeartRateSampler.this, "Timed out attempting to connect, try again", Toast.LENGTH_LONG).show();
-                                                mTextView_Status.setText("Scanning for heart rate devices asynchronously...");
-                                            }
-                                        });
-                                    }
-                                    else
-                                    {
-                                        //Otherwise the results, including SUCCESS, behave the same as
-                                        base_IPluginAccessResultReceiver.onResultReceived(result, resultCode, initialDeviceState);
-                                        hrScanCtrl = null;
-                                    }
-                                }
-                                }, base_IDeviceStateChangeReceiver);
-                    }
-                });
+        runOnUiThread(() -> {
+            mTextView_Status.setText("Connecting to " + asyncScanResultDeviceInfo.getDeviceDisplayName());
+            releaseHandle = hrScanCtrl.requestDeviceAccess(asyncScanResultDeviceInfo,
+                    (result, resultCode, initialDeviceState) -> {
+                        if(resultCode == RequestAccessResult.SEARCH_TIMEOUT)
+                        {
+                            //On a connection timeout the scan automatically resumes, so we inform the user, and go back to scanning
+                            runOnUiThread(() -> {
+                                    Toast.makeText(Activity_AsyncScanHeartRateSampler.this, "Timed out attempting to connect, try again", Toast.LENGTH_LONG).show();
+                                    mTextView_Status.setText("Scanning for heart rate devices asynchronously...");
+                                });
+
+                        }
+                        else
+                        {
+                            //Otherwise the results, including SUCCESS, behave the same as
+                            base_IPluginAccessResultReceiver.onResultReceived(result, resultCode, initialDeviceState);
+                            hrScanCtrl = null;
+                        }
+                    }, base_IDeviceStateChangeReceiver);
+        });
     }
 
     /**
@@ -170,32 +142,22 @@ public class Activity_AsyncScanHeartRateSampler extends Activity_HeartRateDispla
                 if(deviceFound.isAlreadyConnected())
                 {
                     mAlreadyConnectedDeviceInfos.add(deviceFound);
-                    runOnUiThread(new Runnable()
-                    {
-                        @Override
-                        public void run()
+                    runOnUiThread(() -> {
+                        if(adapter_connDevNameList.isEmpty())   //connected device category is invisible unless there are some present
                         {
-                            if(adapter_connDevNameList.isEmpty())   //connected device category is invisible unless there are some present
-                            {
-                                findViewById(R.id.listView_AlreadyConnectedDevices).setVisibility(View.VISIBLE);
-                                findViewById(R.id.textView_AlreadyConnectedTitle).setVisibility(View.VISIBLE);
-                            }
-                            adapter_connDevNameList.add(deviceFound.getDeviceDisplayName());
-                            adapter_connDevNameList.notifyDataSetChanged();
+                            findViewById(R.id.listView_AlreadyConnectedDevices).setVisibility(View.VISIBLE);
+                            findViewById(R.id.textView_AlreadyConnectedTitle).setVisibility(View.VISIBLE);
                         }
+                        adapter_connDevNameList.add(deviceFound.getDeviceDisplayName());
+                        adapter_connDevNameList.notifyDataSetChanged();
                     });
                 }
                 else
                 {
                     mScannedDeviceInfos.add(deviceFound);
-                    runOnUiThread(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            adapter_devNameList.add(deviceFound.getDeviceDisplayName());
-                            adapter_devNameList.notifyDataSetChanged();
-                        }
+                    runOnUiThread(() -> {
+                        adapter_devNameList.add(deviceFound.getDeviceDisplayName());
+                        adapter_devNameList.notifyDataSetChanged();
                     });
                 }
             }

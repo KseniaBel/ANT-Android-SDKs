@@ -9,6 +9,7 @@ All rights reserved.
 
 package com.dsi.ant.antplus.pluginsampler.geocache;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.DatePickerDialog.OnDateSetListener;
@@ -49,6 +50,7 @@ import java.util.TimeZone;
 /**
  * Dialog to allow programming a geocache device.
  */
+@SuppressLint("ValidFragment")
 public class Dialog_GeoProgramDevice extends DialogFragment
 {
     EditText editText_IdString;

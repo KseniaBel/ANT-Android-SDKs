@@ -15,8 +15,6 @@ import java.util.ArrayList;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -34,16 +32,11 @@ import android.widget.Toast;
 import com.dsi.ant.antplus.pluginsampler.Dialog_ProgressWaiter;
 import com.dsi.ant.antplus.pluginsampler.R;
 import com.dsi.ant.antplus.pluginsampler.multidevicesearch.Activity_MultiDeviceSearchSampler;
-import com.dsi.ant.plugins.antplus.common.AntFsCommon.IAntFsProgressUpdateReceiver;
 import com.dsi.ant.plugins.antplus.pcc.AntPlusBloodPressurePcc;
-import com.dsi.ant.plugins.antplus.pcc.AntPlusBloodPressurePcc.BloodPressureMeasurement;
 import com.dsi.ant.plugins.antplus.pcc.AntPlusBloodPressurePcc.DownloadMeasurementsStatusCode;
 import com.dsi.ant.plugins.antplus.pcc.AntPlusBloodPressurePcc.IDownloadMeasurementsStatusReceiver;
-import com.dsi.ant.plugins.antplus.pcc.AntPlusBloodPressurePcc.IMeasurementDownloadedReceiver;
-import com.dsi.ant.plugins.antplus.pcc.AntPlusBloodPressurePcc.IResetDataAndSetTimeFinishedReceiver;
 import com.dsi.ant.plugins.antplus.pcc.AntPlusEnvironmentPcc;
 import com.dsi.ant.plugins.antplus.pcc.defines.AntFsRequestStatus;
-import com.dsi.ant.plugins.antplus.pcc.defines.AntFsState;
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceState;
 import com.dsi.ant.plugins.antplus.pcc.defines.RequestAccessResult;
 import com.dsi.ant.plugins.antplus.pccbase.AntPluginPcc.IDeviceStateChangeReceiver;
@@ -65,7 +58,7 @@ public class Activity_BloodPressureSampler extends FragmentActivity
     CheckBox checkBox_setTimeOnReset;
     Button button_requestDownloadAllHistory;
     CheckBox checkBox_downloadNewOnly;
-    CheckBox checkBox_enableMonitoring;
+    CheckBox checkBox_enableMonitoring = (CheckBox)findViewById(R.id.checkbox_monitor);
     Button button_stopDataMonitor;
     LinearLayout linearLayout_FitDataView;
 
@@ -125,29 +118,17 @@ public class Activity_BloodPressureSampler extends FragmentActivity
                             + AntPlusEnvironmentPcc.getMissingDependencyName()
                             + "\"\n was not found. You need to install the ANT+ Plugins service or you may need to update your existing version if you already have it. Do you want to launch the Play Store to get it?");
                     adlgBldr.setCancelable(true);
-                    adlgBldr.setPositiveButton("Go to Store", new OnClickListener()
-                    {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which)
-                        {
-                            Intent startStore = null;
-                            startStore = new Intent(Intent.ACTION_VIEW, Uri
-                                .parse("market://details?id="
-                                    + AntPlusEnvironmentPcc
-                                        .getMissingDependencyPackageName()));
-                            startStore.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    adlgBldr.setPositiveButton("Go to Store", (dialog, which) -> {
+                        Intent startStore = null;
+                        startStore = new Intent(Intent.ACTION_VIEW, Uri
+                            .parse("market://details?id="
+                                + AntPlusEnvironmentPcc
+                                    .getMissingDependencyPackageName()));
+                        startStore.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-                            Activity_BloodPressureSampler.this.startActivity(startStore);
-                        }
+                        Activity_BloodPressureSampler.this.startActivity(startStore);
                     });
-                    adlgBldr.setNegativeButton("Cancel", new OnClickListener()
-                    {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which)
-                        {
-                            dialog.dismiss();
-                        }
-                    });
+                    adlgBldr.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
 
                     final AlertDialog waitDialog = adlgBldr.create();
                     waitDialog.show();
@@ -179,21 +160,16 @@ public class Activity_BloodPressureSampler extends FragmentActivity
         @Override
         public void onDeviceStateChange(final DeviceState newDeviceState)
         {
-            runOnUiThread(new Runnable()
-            {
-                @Override
-                public void run()
+            runOnUiThread(() -> {
+                tv_status.setText(bpPcc.getDeviceName() + ": " + newDeviceState);
+                if (newDeviceState == DeviceState.DEAD)
                 {
-                    tv_status.setText(bpPcc.getDeviceName() + ": " + newDeviceState);
-                    if (newDeviceState == DeviceState.DEAD)
-                    {
-                        if (antFsProgressDialog != null)
-                            antFsProgressDialog.dismiss();
+                    if (antFsProgressDialog != null)
+                        antFsProgressDialog.dismiss();
 
-                        bpPcc = null;
-                        setRequestUiEnabled(false);
-                        button_stopDataMonitor.setVisibility(View.GONE);
-                    }
+                    bpPcc = null;
+                    setRequestUiEnabled(false);
+                    button_stopDataMonitor.setVisibility(View.GONE);
                 }
             });
         }
@@ -206,39 +182,30 @@ public class Activity_BloodPressureSampler extends FragmentActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bloodpressure);
 
-        layoutControllerList = new ArrayList<Closeable>();
+        layoutControllerList = new ArrayList<>();
 
-        button_getAntFsMfgID = (Button) findViewById(R.id.button_getMfgId);
-        button_requestResetData = (Button) findViewById(R.id.button_requestResetDataAndSetTime);
-        checkBox_setTimeOnReset = (CheckBox)findViewById(R.id.checkbox_setTime);
-        button_requestDownloadAllHistory = (Button) findViewById(R.id.button_requestDownloadAllHistory);
-        checkBox_downloadNewOnly = (CheckBox)findViewById(R.id.checkbox_newdataonly);
-        checkBox_enableMonitoring = (CheckBox)findViewById(R.id.checkbox_monitor);
-        button_stopDataMonitor = (Button) findViewById(R.id.button_StopBloodPressureDataMonitor);
-        linearLayout_FitDataView = (LinearLayout) findViewById(R.id.linearLayout_BloodPressureCards);
+        button_getAntFsMfgID = findViewById(R.id.button_getMfgId);
+        button_requestResetData = findViewById(R.id.button_requestResetDataAndSetTime);
+        checkBox_setTimeOnReset = findViewById(R.id.checkbox_setTime);
+        button_requestDownloadAllHistory = findViewById(R.id.button_requestDownloadAllHistory);
+        checkBox_downloadNewOnly = findViewById(R.id.checkbox_newdataonly);
+        button_stopDataMonitor = findViewById(R.id.button_StopBloodPressureDataMonitor);
+        linearLayout_FitDataView = findViewById(R.id.linearLayout_BloodPressureCards);
 
-        tv_status = (TextView)findViewById(R.id.textView_Status);
-        tv_mfgID = (TextView) findViewById(R.id.textView_AntFsMfgId);
+        tv_status = findViewById(R.id.textView_Status);
+        tv_mfgID = findViewById(R.id.textView_AntFsMfgId);
 
         button_stopDataMonitor.setOnClickListener(
-            new View.OnClickListener() {
-
-                @Override
-                public void onClick(View arg0) {
+                arg0 -> {
                     if(bpPcc == null)
                         return;
 
                     bpPcc.cancelDownloadMeasurementsMonitor();
                     button_stopDataMonitor.setVisibility(View.GONE);
-                }
-            });
+                });
 
         button_requestDownloadAllHistory.setOnClickListener(
-            new View.OnClickListener()
-            {
-                @Override
-                public void onClick(View v)
-                {
+                v -> {
                     if(bpPcc == null)
                         return;
 
@@ -258,13 +225,7 @@ public class Activity_BloodPressureSampler extends FragmentActivity
                                 public void onDownloadMeasurementsStatus(final DownloadMeasurementsStatusCode statusCode,
                                         final AntFsRequestStatus finishedCode)
                                 {
-                                    runOnUiThread(new Runnable()
-                                    {
-                                        @Override
-                                        public void run() {
-                                            handleDownloadMeasurementsState(statusCode, finishedCode);
-                                        }
-                                    });
+                                    runOnUiThread(() -> handleDownloadMeasurementsState(statusCode, finishedCode));
                                 }
 
                                 private void handleDownloadMeasurementsState(DownloadMeasurementsStatusCode statusCode,
@@ -339,90 +300,66 @@ public class Activity_BloodPressureSampler extends FragmentActivity
                                     }
                                 }
                             },
-                            new IMeasurementDownloadedReceiver()
-                            {
-                                @Override
-                                public void onMeasurementDownloaded(final BloodPressureMeasurement measurement) {
-                                    //Add Blood Pressure Layout to the list of layouts displayed to the user
-                                    runOnUiThread(new Runnable()
-                                    {
-                                        @Override
-                                        public void run()
-                                        {
-                                            layoutControllerList.add(0, new LayoutController_BloodPressure(
-                                                    getLayoutInflater(),
-                                                    linearLayout_FitDataView,
-                                                    measurement.asBloodPressureFitMesg()));
-                                        }
-                                    });
-                                }
+                            measurement -> {
+                                //Add Blood Pressure Layout to the list of layouts displayed to the user
+                                runOnUiThread(() -> layoutControllerList.add(0, new LayoutController_BloodPressure(
+                                        getLayoutInflater(),
+                                        linearLayout_FitDataView,
+                                        measurement.asBloodPressureFitMesg())));
                             },
-                            new IAntFsProgressUpdateReceiver()
-                            {
-                                @Override
-                                public void onNewAntFsProgressUpdate(final AntFsState stateCode,
-                                    final long transferredBytes, final long totalBytes)
+                            (stateCode, transferredBytes, totalBytes) -> runOnUiThread(() -> {
+                                switch(stateCode)
                                 {
-                                    runOnUiThread(new Runnable()
-                                    {
-                                        @Override
-                                        public void run()
+                                    //In Link state and requesting to link with the device in order to pass to Auth state
+                                    case LINK_REQUESTING_LINK:
+                                        antFsProgressDialog.setMax(4);
+                                        antFsProgressDialog.setProgress(1);
+                                        antFsProgressDialog.setMessage("In Link State: Requesting Link.");
+                                        break;
+
+                                    //In Authentication state, processing authentication commands
+                                    case AUTHENTICATION:
+                                        antFsProgressDialog.setMax(4);
+                                        antFsProgressDialog.setProgress(2);
+                                        antFsProgressDialog.setMessage("In Authentication State.");
+                                        break;
+
+                                    //In Authentication state, currently attempting to pair with the device
+                                    //NOTE: Feedback SHOULD be given to the user here as pairing typically requires user interaction with the device
+                                    case AUTHENTICATION_REQUESTING_PAIRING:
+                                        antFsProgressDialog.setMax(4);
+                                        antFsProgressDialog.setProgress(2);
+                                        antFsProgressDialog.setMessage("In Authentication State: User Pairing Requested.");
+                                        break;
+
+                                    //In Transport state, no requests are currently being processed
+                                    case TRANSPORT_IDLE:
+                                        antFsProgressDialog.setMax(4);
+                                        antFsProgressDialog.setProgress(3);
+                                        antFsProgressDialog.setMessage("Requesting download (In Transport State: Idle)...");
+                                        break;
+
+                                    //In Transport state, files are currently being downloaded
+                                    case TRANSPORT_DOWNLOADING:
+                                        antFsProgressDialog.setMessage("In Transport State: Downloading.");
+                                        antFsProgressDialog.setMax(100);
+
+                                        if(transferredBytes >= 0 && totalBytes > 0)
                                         {
-                                            switch(stateCode)
-                                            {
-                                                //In Link state and requesting to link with the device in order to pass to Auth state
-                                                case LINK_REQUESTING_LINK:
-                                                    antFsProgressDialog.setMax(4);
-                                                    antFsProgressDialog.setProgress(1);
-                                                    antFsProgressDialog.setMessage("In Link State: Requesting Link.");
-                                                    break;
-
-                                                //In Authentication state, processing authentication commands
-                                                case AUTHENTICATION:
-                                                    antFsProgressDialog.setMax(4);
-                                                    antFsProgressDialog.setProgress(2);
-                                                    antFsProgressDialog.setMessage("In Authentication State.");
-                                                    break;
-
-                                                //In Authentication state, currently attempting to pair with the device
-                                                //NOTE: Feedback SHOULD be given to the user here as pairing typically requires user interaction with the device
-                                                case AUTHENTICATION_REQUESTING_PAIRING:
-                                                    antFsProgressDialog.setMax(4);
-                                                    antFsProgressDialog.setProgress(2);
-                                                    antFsProgressDialog.setMessage("In Authentication State: User Pairing Requested.");
-                                                    break;
-
-                                                //In Transport state, no requests are currently being processed
-                                                case TRANSPORT_IDLE:
-                                                    antFsProgressDialog.setMax(4);
-                                                    antFsProgressDialog.setProgress(3);
-                                                    antFsProgressDialog.setMessage("Requesting download (In Transport State: Idle)...");
-                                                    break;
-
-                                                //In Transport state, files are currently being downloaded
-                                                case TRANSPORT_DOWNLOADING:
-                                                    antFsProgressDialog.setMessage("In Transport State: Downloading.");
-                                                    antFsProgressDialog.setMax(100);
-
-                                                    if(transferredBytes >= 0 && totalBytes > 0)
-                                                    {
-                                                        int progress = (int)(transferredBytes*100/totalBytes);
-                                                        antFsProgressDialog.setProgress(progress);
-                                                    }
-                                                    break;
-
-                                                case UNRECOGNIZED:
-                                                    //This flag indicates that an unrecognized value was sent by the service, an upgrade of your PCC may be required to handle this new value.
-                                                    Toast.makeText(Activity_BloodPressureSampler.this, "Failed: UNRECOGNIZED. PluginLib or Plugin Service Upgrade Required?", Toast.LENGTH_SHORT).show();
-                                                    break;
-                                                default:
-                                                    Log.w("BloodPressureSampler", "Unknown ANT-FS State Code Received: " + stateCode);
-                                                    break;
-                                               }
+                                            int progress = (int)(transferredBytes*100/totalBytes);
+                                            antFsProgressDialog.setProgress(progress);
                                         }
-                                    });
-                                }
-                            });
+                                        break;
+
+                                    case UNRECOGNIZED:
+                                        //This flag indicates that an unrecognized value was sent by the service, an upgrade of your PCC may be required to handle this new value.
+                                        Toast.makeText(Activity_BloodPressureSampler.this, "Failed: UNRECOGNIZED. PluginLib or Plugin Service Upgrade Required?", Toast.LENGTH_SHORT).show();
+                                        break;
+                                    default:
+                                        Log.w("BloodPressureSampler", "Unknown ANT-FS State Code Received: " + stateCode);
+                                        break;
+                                   }
+                            }));
 
                     if(submitted)
                     {
@@ -435,74 +372,53 @@ public class Activity_BloodPressureSampler extends FragmentActivity
                     {
                         Toast.makeText(Activity_BloodPressureSampler.this, "Error Downloading Measurements: PCC already busy or dead", Toast.LENGTH_SHORT).show();
                     }
-                }
-            });
+                });
 
-        button_getAntFsMfgID.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View arg0)
-            {
-                if(bpPcc != null)
-                    tv_mfgID.setText(Integer.toString(bpPcc.getAntFsManufacturerID()));
-            }
+        button_getAntFsMfgID.setOnClickListener(arg0 -> {
+            if(bpPcc != null)
+                tv_mfgID.setText(Integer.toString(bpPcc.getAntFsManufacturerID()));
         });
 
-        button_requestResetData.setOnClickListener(new View.OnClickListener()
+        button_requestResetData.setOnClickListener(v -> {
+            if(bpPcc == null)
+                return;
+
+            final Dialog_ProgressWaiter progressDialog = new Dialog_ProgressWaiter("Resetting Device...");
+            boolean doSetTime = checkBox_setTimeOnReset.isChecked();
+
+            boolean submitted = bpPcc.requestResetDataAndSetTime(doSetTime, statusCode -> {
+                //Unrecognized or fail plugins service version indicates the progress dialog would never have started
+                if(statusCode == AntFsRequestStatus.UNRECOGNIZED)
                 {
-                    @Override
-                    public void onClick(View v)
-                    {
-                        if(bpPcc == null)
-                            return;
-
-                        final Dialog_ProgressWaiter progressDialog = new Dialog_ProgressWaiter("Resetting Device...");
-                        boolean doSetTime = checkBox_setTimeOnReset.isChecked();
-
-                        boolean submitted = bpPcc.requestResetDataAndSetTime(doSetTime, new IResetDataAndSetTimeFinishedReceiver()
-                                {
-                                    @Override
-                                    public void onNewResetDataAndSetTimeFinished(final AntFsRequestStatus statusCode)
-                                    {
-                                        //Unrecognized or fail plugins service version indicates the progress dialog would never have started
-                                        if(statusCode == AntFsRequestStatus.UNRECOGNIZED)
-                                        {
-                                            Toast.makeText(Activity_BloodPressureSampler.this,
-                                                "Reset Failed - " + statusCode + ". Plugin Lib needs upgrade.",
-                                                Toast.LENGTH_LONG).show();
-                                            return;
-                                        }
-                                        else if (statusCode == AntFsRequestStatus.FAIL_PLUGINS_SERVICE_VERSION)
-                                        {
-                                            Toast.makeText(Activity_BloodPressureSampler.this,
-                                                "Reset Failed - " + statusCode + ". Plugin Service needs upgrade.",
-                                                Toast.LENGTH_LONG).show();
-                                            return;
-                                        }
+                    Toast.makeText(Activity_BloodPressureSampler.this,
+                        "Reset Failed - " + statusCode + ". Plugin Lib needs upgrade.",
+                        Toast.LENGTH_LONG).show();
+                    return;
+                }
+                else if (statusCode == AntFsRequestStatus.FAIL_PLUGINS_SERVICE_VERSION)
+                {
+                    Toast.makeText(Activity_BloodPressureSampler.this,
+                        "Reset Failed - " + statusCode + ". Plugin Service needs upgrade.",
+                        Toast.LENGTH_LONG).show();
+                    return;
+                }
 
 
-                                        progressDialog.dismiss();
+                progressDialog.dismiss();
 
-                                        runOnUiThread(new Runnable()
-                                                {
-                                                    @Override
-                                                    public void run()
-                                                    {
-                                                        if(statusCode == AntFsRequestStatus.SUCCESS)
-                                                            Toast.makeText(Activity_BloodPressureSampler.this, "Reset Complete", Toast.LENGTH_SHORT).show();
-                                                        else
-                                                            Toast.makeText(Activity_BloodPressureSampler.this, "Reset Failed - " + statusCode, Toast.LENGTH_LONG).show();
-                                                    }
-                                                });
-                                    }
-                                }, null);   //TODO use AntFsProgressReceiver
-
-                        if(submitted)
-                            progressDialog.show(getSupportFragmentManager(), "ResetProgressDialog");
-                        else
-                            Toast.makeText(Activity_BloodPressureSampler.this, "Error Resetting Device: PCC likely busy or dead", Toast.LENGTH_SHORT).show();
-                    }
+                runOnUiThread(() -> {
+                    if(statusCode == AntFsRequestStatus.SUCCESS)
+                        Toast.makeText(Activity_BloodPressureSampler.this, "Reset Complete", Toast.LENGTH_SHORT).show();
+                    else
+                        Toast.makeText(Activity_BloodPressureSampler.this, "Reset Failed - " + statusCode, Toast.LENGTH_LONG).show();
                 });
+            }, null);   //TODO use AntFsProgressReceiver
+
+            if(submitted)
+                progressDialog.show(getSupportFragmentManager(), "ResetProgressDialog");
+            else
+                Toast.makeText(Activity_BloodPressureSampler.this, "Error Resetting Device: PCC likely busy or dead", Toast.LENGTH_SHORT).show();
+        });
 
         resetPcc();
     }

@@ -15,7 +15,6 @@ import com.dsi.ant.plugins.antplus.pcc.AntPlusFitnessEquipmentPcc.Settings;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.support.v4.app.DialogFragment;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -47,11 +46,6 @@ public class Dialog_ConfigSettings extends DialogFragment
 
     Settings settings;
 
-    public Settings getSettings()
-    {
-        return settings;
-    }
-
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState)
     {
@@ -67,40 +61,30 @@ public class Dialog_ConfigSettings extends DialogFragment
         builder.setView(detailsView);
 
         // Add action buttons
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
-                Intent i = new Intent(Dialog_ConfigSettings.this.getActivity(), Activity_FitnessEquipmentSampler.class);
-                Bundle b = new Bundle();
-                b.putString(SETTINGS_NAME, et_friendlyName.getText().toString());
-                b.putShort(SETTINGS_AGE, Short.parseShort(et_age.getText().toString()));
-                b.putFloat(SETTINGS_HEIGHT, Float.parseFloat(et_height.getText().toString())/100f); // Convert to m
-                b.putFloat(SETTINGS_WEIGHT, Float.parseFloat(et_weight.getText().toString()));
-                b.putBoolean(SETTINGS_GENDER, rb_male.isChecked());
-                b.putBoolean(INCLUDE_WORKOUT,cb_workout.isChecked());
-                i.putExtras(b);
-                startActivity(i);
-            }
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            Intent i = new Intent(Dialog_ConfigSettings.this.getActivity(), Activity_FitnessEquipmentSampler.class);
+            Bundle b = new Bundle();
+            b.putString(SETTINGS_NAME, et_friendlyName.getText().toString());
+            b.putShort(SETTINGS_AGE, Short.parseShort(et_age.getText().toString()));
+            b.putFloat(SETTINGS_HEIGHT, Float.parseFloat(et_height.getText().toString())/100f); // Convert to m
+            b.putFloat(SETTINGS_WEIGHT, Float.parseFloat(et_weight.getText().toString()));
+            b.putBoolean(SETTINGS_GENDER, rb_male.isChecked());
+            b.putBoolean(INCLUDE_WORKOUT,cb_workout.isChecked());
+            i.putExtras(b);
+            startActivity(i);
         });
 
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                        //Let dialog dismiss
-                    }
-                });
+        builder.setNegativeButton("Cancel", (dialog, which) -> {
+            //Let dialog dismiss
+        });
 
-        et_friendlyName = (EditText) detailsView.findViewById(R.id.editText_FriendlyName);
-        et_age = (EditText) detailsView.findViewById(R.id.editText_Age);
-        et_height = (EditText) detailsView.findViewById(R.id.editText_Height);
-        et_weight = (EditText) detailsView.findViewById(R.id.editText_Weight);
-        rb_female = (RadioButton) detailsView.findViewById(R.id.radioButton_Female);
-        rb_male = (RadioButton) detailsView.findViewById(R.id.radioButton_Male);
-        cb_workout = (CheckBox) detailsView.findViewById(R.id.checkBox_Workout);
+        et_friendlyName = detailsView.findViewById(R.id.editText_FriendlyName);
+        et_age = detailsView.findViewById(R.id.editText_Age);
+        et_height = detailsView.findViewById(R.id.editText_Height);
+        et_weight = detailsView.findViewById(R.id.editText_Weight);
+        rb_female = detailsView.findViewById(R.id.radioButton_Female);
+        rb_male = detailsView.findViewById(R.id.radioButton_Male);
+        cb_workout = detailsView.findViewById(R.id.checkBox_Workout);
 
         return builder.create();
     }

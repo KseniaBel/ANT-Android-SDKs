@@ -53,7 +53,7 @@ public class Activity_GeoScanList extends FragmentActivity
     AntPlusGeocachePcc geoPcc = null;
     PccReleaseHandle<AntPlusGeocachePcc> releaseHandle = null;
 
-    TextView tv_status;
+    TextView tv_status = (TextView)findViewById(R.id.textView_Status);
 
     List<Map<String,String>> deviceList_Display;
     SimpleAdapter adapter_deviceList_Display;
@@ -66,53 +66,37 @@ public class Activity_GeoScanList extends FragmentActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_list);
 
-        tv_status = (TextView)findViewById(R.id.textView_Status);
-
-        deviceList_Display = new ArrayList<Map<String,String>>();
+        deviceList_Display = new ArrayList<>();
         adapter_deviceList_Display = new SimpleAdapter(this, deviceList_Display, android.R.layout.simple_list_item_2, new String[]{"title","desc"}, new int[]{android.R.id.text1,android.R.id.text2});
 
-        ListView listView_Devices = (ListView)findViewById(R.id.listView_deviceList);
+        ListView listView_Devices = findViewById(R.id.listView_deviceList);
         listView_Devices.setAdapter(adapter_deviceList_Display);
 
 
         //Set the list to download the data for the selected device and display it.
-        listView_Devices.setOnItemClickListener(new OnItemClickListener()
-        {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int pos, long id)
-            {
-                if(geoPcc == null)
-                    return;
+        listView_Devices.setOnItemClickListener((parent, view, pos, id) -> {
+            if(geoPcc == null)
+                return;
 
-                if(!bDevicesInList)
-                    return;
+            if(!bDevicesInList)
+                return;
 
-                int deviceID = Integer.parseInt(deviceList_Display.get(pos).get("desc"));
+            int deviceID = Integer.parseInt(deviceList_Display.get(pos).get("desc"));
 
-                final Dialog_ProgressWaiter progressDialog = new Dialog_ProgressWaiter("Downloading device data");
+            final Dialog_ProgressWaiter progressDialog = new Dialog_ProgressWaiter("Downloading device data");
 
-                boolean reqSubmitted = geoPcc.requestDeviceData(deviceID, true,
-                    //Display the results if successful or report failures to user
-                    new IDataDownloadFinishedReceiver()
-                {
-                    @Override
-                    public void onNewDataDownloadFinished(GeocacheRequestStatus status,
-                        GeocacheDeviceData downloadedData)
-                    {
+            boolean reqSubmitted = geoPcc.requestDeviceData(deviceID, true,
+                //Display the results if successful or report failures to user
+                    (status, downloadedData) -> {
                         StringBuilder error = new StringBuilder("Error Downloading Data: ");
 
                         switch(status)
                         {
                             case SUCCESS:
                                 final Dialog_GeoDeviceDetails detailsDialog = new Dialog_GeoDeviceDetails(geoPcc, downloadedData);
-                                runOnUiThread(new Runnable()
-                                {
-                                    @Override
-                                    public void run()
-                                    {
-                                        progressDialog.dismiss();
-                                        detailsDialog.show(getSupportFragmentManager(), "DeviceDetails");
-                                    }
+                                runOnUiThread(() -> {
+                                    progressDialog.dismiss();
+                                    detailsDialog.show(getSupportFragmentManager(), "DeviceDetails");
                                 });
                                 return;
 
@@ -126,41 +110,27 @@ public class Activity_GeoScanList extends FragmentActivity
                                 error.append("Communication with device failed");
                                 break;
                             case UNRECOGNIZED:
-                                runOnUiThread(new Runnable()
-                                {
-                                    @Override
-                                    public void run()
-                                    {
-                                        Toast.makeText(Activity_GeoScanList.this,
-                                            "Failed: UNRECOGNIZED. PluginLib Upgrade Required?",
-                                            Toast.LENGTH_SHORT).show();
-                                    }
-                                });
+                                runOnUiThread(() -> Toast.makeText(Activity_GeoScanList.this,
+                                    "Failed: UNRECOGNIZED. PluginLib Upgrade Required?",
+                                    Toast.LENGTH_SHORT).show());
                                 break;
                             default:
                                 break;
                         }
 
                         final String errorStr = error.toString();
-                        runOnUiThread(new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                progressDialog.dismiss();
-                                Toast.makeText(Activity_GeoScanList.this, errorStr, Toast.LENGTH_LONG).show();
-                            }
+                        runOnUiThread(() -> {
+                            progressDialog.dismiss();
+                            Toast.makeText(Activity_GeoScanList.this, errorStr, Toast.LENGTH_LONG).show();
                         });
-                    }
-                },
-                progressDialog.getUpdateReceiver()
-                    );
+                    },
+            progressDialog.getUpdateReceiver()
+                );
 
-                if(reqSubmitted)
-                    progressDialog.show(getSupportFragmentManager(), "DownloadProgressDialog");
-                else
-                    Toast.makeText(Activity_GeoScanList.this, "Error Downloading Data: PCC already busy or dead", Toast.LENGTH_SHORT).show();
-            }
+            if(reqSubmitted)
+                progressDialog.show(getSupportFragmentManager(), "DownloadProgressDialog");
+            else
+                Toast.makeText(Activity_GeoScanList.this, "Error Downloading Data: PCC already busy or dead", Toast.LENGTH_SHORT).show();
         });
 
         resetPcc();
@@ -181,7 +151,7 @@ public class Activity_GeoScanList extends FragmentActivity
         //Reset the device list display
         bDevicesInList = false;
         deviceList_Display.clear();
-        HashMap<String,String> listItem = new HashMap<String,String>();
+        HashMap<String,String> listItem = new HashMap<>();
         listItem.put("title", "No Devices Found");
         listItem.put("desc", "No results received from plugin yet...");
         deviceList_Display.add(listItem);
@@ -191,109 +161,73 @@ public class Activity_GeoScanList extends FragmentActivity
 
         //Make the access request
         releaseHandle = AntPlusGeocachePcc.requestListAndRequestAccess(this,
-            new IPluginAccessResultReceiver<AntPlusGeocachePcc>()
-            {
-            @Override
-            public void onResultReceived(AntPlusGeocachePcc result, RequestAccessResult resultCode,
-                DeviceState initialDeviceState)
-            {
-                switch(resultCode)
-                {
-                    case SUCCESS:
-                        geoPcc = result;
-                        tv_status.setText(result.getDeviceName() + ": " + initialDeviceState);
-                        geoPcc.requestCurrentDeviceList();
-                        //subscribeToEvents();
-                        break;
-                    case CHANNEL_NOT_AVAILABLE:
-                        Toast.makeText(Activity_GeoScanList.this, "Channel Not Available", Toast.LENGTH_SHORT).show();
-                        tv_status.setText("Error. Do Menu->Reset.");
-                        break;
-                    case ADAPTER_NOT_DETECTED:
-                        Toast.makeText(Activity_GeoScanList.this, "ANT Adapter Not Available. Built-in ANT hardware or external adapter required.", Toast.LENGTH_SHORT).show();
-                        tv_status.setText("Error. Do Menu->Reset.");
-                        break;
-                    case BAD_PARAMS:
-                        //Note: Since we compose all the params ourself, we should never see this result
-                        Toast.makeText(Activity_GeoScanList.this, "Bad request parameters.", Toast.LENGTH_SHORT).show();
-                        tv_status.setText("Error. Do Menu->Reset.");
-                        break;
-                    case OTHER_FAILURE:
-                        Toast.makeText(Activity_GeoScanList.this, "RequestAccess failed. See logcat for details.", Toast.LENGTH_SHORT).show();
-                        tv_status.setText("Error. Do Menu->Reset.");
-                        break;
-                    case DEPENDENCY_NOT_INSTALLED:
-                        tv_status.setText("Error. Do Menu->Reset.");
-                        AlertDialog.Builder adlgBldr = new AlertDialog.Builder(Activity_GeoScanList.this);
-                        adlgBldr.setTitle("Missing Dependency");
-                        adlgBldr.setMessage("The required service\n\"" + AntPlusGeocachePcc.getMissingDependencyName() + "\"\n was not found. You need to install the ANT+ Plugins service or you may need to update your existing version if you already have it. Do you want to launch the Play Store to get it?");
-                        adlgBldr.setCancelable(true);
-                        adlgBldr.setPositiveButton("Go to Store", new OnClickListener()
-                        {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which)
-                            {
+                (result, resultCode, initialDeviceState) -> {
+                    switch(resultCode)
+                    {
+                        case SUCCESS:
+                            geoPcc = result;
+                            tv_status.setText(result.getDeviceName() + ": " + initialDeviceState);
+                            geoPcc.requestCurrentDeviceList();
+                            //subscribeToEvents();
+                            break;
+                        case CHANNEL_NOT_AVAILABLE:
+                            Toast.makeText(Activity_GeoScanList.this, "Channel Not Available", Toast.LENGTH_SHORT).show();
+                            tv_status.setText("Error. Do Menu->Reset.");
+                            break;
+                        case ADAPTER_NOT_DETECTED:
+                            Toast.makeText(Activity_GeoScanList.this, "ANT Adapter Not Available. Built-in ANT hardware or external adapter required.", Toast.LENGTH_SHORT).show();
+                            tv_status.setText("Error. Do Menu->Reset.");
+                            break;
+                        case BAD_PARAMS:
+                            //Note: Since we compose all the params ourself, we should never see this result
+                            Toast.makeText(Activity_GeoScanList.this, "Bad request parameters.", Toast.LENGTH_SHORT).show();
+                            tv_status.setText("Error. Do Menu->Reset.");
+                            break;
+                        case OTHER_FAILURE:
+                            Toast.makeText(Activity_GeoScanList.this, "RequestAccess failed. See logcat for details.", Toast.LENGTH_SHORT).show();
+                            tv_status.setText("Error. Do Menu->Reset.");
+                            break;
+                        case DEPENDENCY_NOT_INSTALLED:
+                            tv_status.setText("Error. Do Menu->Reset.");
+                            AlertDialog.Builder adlgBldr = new AlertDialog.Builder(Activity_GeoScanList.this);
+                            adlgBldr.setTitle("Missing Dependency");
+                            adlgBldr.setMessage("The required service\n\"" + AntPlusGeocachePcc.getMissingDependencyName() + "\"\n was not found. You need to install the ANT+ Plugins service or you may need to update your existing version if you already have it. Do you want to launch the Play Store to get it?");
+                            adlgBldr.setCancelable(true);
+                            adlgBldr.setPositiveButton("Go to Store", (dialog, which) -> {
                                 Intent startStore = null;
                                 startStore = new Intent(Intent.ACTION_VIEW,Uri.parse("market://details?id=" + AntPlusGeocachePcc.getMissingDependencyPackageName()));
                                 startStore.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
                                 Activity_GeoScanList.this.startActivity(startStore);
-                            }
-                        });
-                        adlgBldr.setNegativeButton("Cancel", new OnClickListener()
-                        {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which)
-                            {
-                                dialog.dismiss();
-                            }
-                        });
+                            });
+                            adlgBldr.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
 
-                        final AlertDialog waitDialog = adlgBldr.create();
-                        waitDialog.show();
-                        break;
-                    case USER_CANCELLED:
-                        tv_status.setText("Cancelled. Do Menu->Reset.");
-                        break;
-                    case UNRECOGNIZED:
-                        Toast.makeText(Activity_GeoScanList.this,
-                            "Failed: UNRECOGNIZED. PluginLib Upgrade Required?",
-                            Toast.LENGTH_SHORT).show();
-                        tv_status.setText("Error. Do Menu->Reset.");
-                        break;
-                    default:
-                        Toast.makeText(Activity_GeoScanList.this, "Unrecognized result: " + resultCode, Toast.LENGTH_SHORT).show();
-                        tv_status.setText("Error. Do Menu->Reset.");
-                        break;
-                }
-            }
-            },
+                            final AlertDialog waitDialog = adlgBldr.create();
+                            waitDialog.show();
+                            break;
+                        case USER_CANCELLED:
+                            tv_status.setText("Cancelled. Do Menu->Reset.");
+                            break;
+                        case UNRECOGNIZED:
+                            Toast.makeText(Activity_GeoScanList.this,
+                                "Failed: UNRECOGNIZED. PluginLib Upgrade Required?",
+                                Toast.LENGTH_SHORT).show();
+                            tv_status.setText("Error. Do Menu->Reset.");
+                            break;
+                        default:
+                            Toast.makeText(Activity_GeoScanList.this, "Unrecognized result: " + resultCode, Toast.LENGTH_SHORT).show();
+                            tv_status.setText("Error. Do Menu->Reset.");
+                            break;
+                    }
+                },
             //Receives state changes and shows it on the status display line
-            new IDeviceStateChangeReceiver()
-            {
-                @Override
-                public void onDeviceStateChange(final DeviceState newDeviceState)
-                {
-                    runOnUiThread(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            tv_status.setText(geoPcc.getDeviceName() + ": " + newDeviceState);
-                            if(newDeviceState == DeviceState.DEAD)
-                                geoPcc = null;
-                        }
-                    });
-                }
-            },
+                newDeviceState -> runOnUiThread(() -> {
+                    tv_status.setText(geoPcc.getDeviceName() + ": " + newDeviceState);
+                    if(newDeviceState == DeviceState.DEAD)
+                        geoPcc = null;
+                }),
             //Receives the device list updates and displays the current list
-            new IAvailableDeviceListReceiver()
-            {
-                @Override
-                public void onNewAvailableDeviceList(int[] deviceIDs,
-                    String[] deviceIdentifierStrings, DeviceChangingCode changeCode,
-                    int changingDeviceID)
-                {
+                (deviceIDs, deviceIdentifierStrings, changeCode, changingDeviceID) -> {
                     deviceList_Display.clear();
 
                     if(deviceIDs.length != 0)
@@ -306,33 +240,25 @@ public class Activity_GeoScanList extends FragmentActivity
                             else if(deviceIdentifierStrings[i].contentEquals("_________"))
                                 deviceIdentifierStrings[i] = "<Unprogrammed/Invalid Name>";
 
-                            HashMap<String,String> listItem = new HashMap<String,String>();
-                            listItem.put("title", deviceIdentifierStrings[i]);
-                            listItem.put("desc", Integer.toString(deviceIDs[i]));
+                            HashMap<String,String> listItem1 = new HashMap<String,String>();
+                            listItem1.put("title", deviceIdentifierStrings[i]);
+                            listItem1.put("desc", Integer.toString(deviceIDs[i]));
 
-                            deviceList_Display.add(listItem);
+                            deviceList_Display.add(listItem1);
                         }
                     }
                     else
                     {
                         bDevicesInList = false;
-                        HashMap<String,String> listItem = new HashMap<String,String>();
-                        listItem.put("title", "No Devices Found");
-                        listItem.put("desc", "No geocaches sensors detected in range yet...");
-                        deviceList_Display.add(listItem);
+                        HashMap<String,String> listItem1 = new HashMap<String,String>();
+                        listItem1.put("title", "No Devices Found");
+                        listItem1.put("desc", "No geocaches sensors detected in range yet...");
+                        deviceList_Display.add(listItem1);
                     }
 
-                    runOnUiThread(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            adapter_deviceList_Display.notifyDataSetChanged();
-                        }
-                    });
+                    runOnUiThread(() -> adapter_deviceList_Display.notifyDataSetChanged());
                 }
-            }
-            );
+        );
     }
 
     @Override

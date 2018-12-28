@@ -11,38 +11,23 @@ package com.dsi.ant.antplus.pluginsampler.heartrate;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dsi.ant.antplus.pluginsampler.R;
 import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc;
 import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc.DataState;
-import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc.ICalculatedRrIntervalReceiver;
-import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc.IHeartRateDataReceiver;
-import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc.IPage4AddtDataReceiver;
 import com.dsi.ant.plugins.antplus.pcc.AntPlusHeartRatePcc.RrFlag;
 import com.dsi.ant.plugins.antplus.pcc.defines.DeviceState;
-import com.dsi.ant.plugins.antplus.pcc.defines.EventFlag;
 import com.dsi.ant.plugins.antplus.pcc.defines.RequestAccessResult;
-import com.dsi.ant.plugins.antplus.pccbase.AntPlusCommonPcc.IRssiReceiver;
 import com.dsi.ant.plugins.antplus.pccbase.PccReleaseHandle;
 import com.dsi.ant.plugins.antplus.pccbase.AntPluginPcc.IDeviceStateChangeReceiver;
 import com.dsi.ant.plugins.antplus.pccbase.AntPluginPcc.IPluginAccessResultReceiver;
-import com.dsi.ant.plugins.antplus.pccbase.AntPlusLegacyCommonPcc.ICumulativeOperatingTimeReceiver;
-import com.dsi.ant.plugins.antplus.pccbase.AntPlusLegacyCommonPcc.IManufacturerAndSerialReceiver;
-import com.dsi.ant.plugins.antplus.pccbase.AntPlusLegacyCommonPcc.IVersionAndModelReceiver;
-
-import java.math.BigDecimal;
-import java.util.EnumSet;
 
 /**
  * Base class to connects to Heart Rate Plugin and display all the event data.
@@ -107,32 +92,32 @@ public abstract class Activity_HeartRateDisplayBase extends Activity
     {
         setContentView(R.layout.activity_heart_rate);
 
-        tv_status = (TextView)findViewById(R.id.textView_Status);
+        tv_status = findViewById(R.id.textView_Status);
 
-        tv_estTimestamp = (TextView)findViewById(R.id.textView_EstTimestamp);
+        tv_estTimestamp = findViewById(R.id.textView_EstTimestamp);
 
-        tv_rssi = (TextView)findViewById(R.id.textView_Rssi);
+        tv_rssi = findViewById(R.id.textView_Rssi);
 
-        tv_computedHeartRate = (TextView)findViewById(R.id.textView_ComputedHeartRate);
-        tv_heartBeatCounter = (TextView)findViewById(R.id.textView_HeartBeatCounter);
-        tv_heartBeatEventTime = (TextView)findViewById(R.id.textView_HeartBeatEventTime);
+        tv_computedHeartRate = findViewById(R.id.textView_ComputedHeartRate);
+        tv_heartBeatCounter = findViewById(R.id.textView_HeartBeatCounter);
+        tv_heartBeatEventTime = findViewById(R.id.textView_HeartBeatEventTime);
 
-        tv_manufacturerSpecificByte = (TextView)findViewById(R.id.textView_ManufacturerSpecificByte);
-        tv_previousHeartBeatEventTime = (TextView)findViewById(R.id.textView_PreviousHeartBeatEventTime);
+        tv_manufacturerSpecificByte = findViewById(R.id.textView_ManufacturerSpecificByte);
+        tv_previousHeartBeatEventTime = findViewById(R.id.textView_PreviousHeartBeatEventTime);
 
-        tv_calculatedRrInterval = (TextView)findViewById(R.id.textView_CalculatedRrInterval);
+        tv_calculatedRrInterval = findViewById(R.id.textView_CalculatedRrInterval);
 
-        tv_cumulativeOperatingTime = (TextView)findViewById(R.id.textView_CumulativeOperatingTime);
+        tv_cumulativeOperatingTime = findViewById(R.id.textView_CumulativeOperatingTime);
 
-        tv_manufacturerID = (TextView)findViewById(R.id.textView_ManufacturerID);
-        tv_serialNumber = (TextView)findViewById(R.id.textView_SerialNumber);
+        tv_manufacturerID = findViewById(R.id.textView_ManufacturerID);
+        tv_serialNumber = findViewById(R.id.textView_SerialNumber);
 
-        tv_hardwareVersion = (TextView)findViewById(R.id.textView_HardwareVersion);
-        tv_softwareVersion = (TextView)findViewById(R.id.textView_SoftwareVersion);
-        tv_modelNumber = (TextView)findViewById(R.id.textView_ModelNumber);
+        tv_hardwareVersion = findViewById(R.id.textView_HardwareVersion);
+        tv_softwareVersion = findViewById(R.id.textView_SoftwareVersion);
+        tv_modelNumber = findViewById(R.id.textView_ModelNumber);
 
-        tv_dataStatus = (TextView)findViewById(R.id.textView_DataStatus);
-        tv_rrFlag = (TextView)findViewById(R.id.textView_rRFlag);
+        tv_dataStatus = findViewById(R.id.textView_DataStatus);
+        tv_rrFlag = findViewById(R.id.textView_rRFlag);
 
         //Reset the text display
         tv_status.setText(status);
@@ -167,157 +152,72 @@ public abstract class Activity_HeartRateDisplayBase extends Activity
      */
     public void subscribeToHrEvents()
     {
-        hrPcc.subscribeHeartRateDataEvent(new IHeartRateDataReceiver()
-        {
-            @Override
-            public void onNewHeartRateData(final long estTimestamp, EnumSet<EventFlag> eventFlags,
-                final int computedHeartRate, final long heartBeatCount,
-                final BigDecimal heartBeatEventTime, final DataState dataState)
-            {
-                // Mark heart rate with asterisk if zero detected
-                final String textHeartRate = String.valueOf(computedHeartRate)
-                    + ((DataState.ZERO_DETECTED.equals(dataState)) ? "*" : "");
+        hrPcc.subscribeHeartRateDataEvent((estTimestamp, eventFlags, computedHeartRate, heartBeatCount, heartBeatEventTime, dataState) -> {
+            // Mark heart rate with asterisk if zero detected
+            final String textHeartRate = String.valueOf(computedHeartRate)
+                + ((DataState.ZERO_DETECTED.equals(dataState)) ? "*" : "");
 
-                // Mark heart beat count and heart beat event time with asterisk if initial value
-                final String textHeartBeatCount = String.valueOf(heartBeatCount)
-                    + ((DataState.INITIAL_VALUE.equals(dataState)) ? "*" : "");
-                final String textHeartBeatEventTime = String.valueOf(heartBeatEventTime)
-                    + ((DataState.INITIAL_VALUE.equals(dataState)) ? "*" : "");
+            // Mark heart beat count and heart beat event time with asterisk if initial value
+            final String textHeartBeatCount = String.valueOf(heartBeatCount)
+                + ((DataState.INITIAL_VALUE.equals(dataState)) ? "*" : "");
+            final String textHeartBeatEventTime = String.valueOf(heartBeatEventTime)
+                + ((DataState.INITIAL_VALUE.equals(dataState)) ? "*" : "");
 
-                runOnUiThread(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        tv_estTimestamp.setText(String.valueOf(estTimestamp));
+            runOnUiThread(() -> {
+                tv_estTimestamp.setText(String.valueOf(estTimestamp));
 
-                        tv_computedHeartRate.setText(textHeartRate);
-                        tv_heartBeatCounter.setText(textHeartBeatCount);
-                        tv_heartBeatEventTime.setText(textHeartBeatEventTime);
+                tv_computedHeartRate.setText(textHeartRate);
+                tv_heartBeatCounter.setText(textHeartBeatCount);
+                tv_heartBeatEventTime.setText(textHeartBeatEventTime);
 
-                        tv_dataStatus.setText(dataState.toString());
-                    }
-                });
-            }
+                tv_dataStatus.setText(dataState.toString());
+            });
         });
 
-        hrPcc.subscribePage4AddtDataEvent(new IPage4AddtDataReceiver()
-        {
-            @Override
-            public void onNewPage4AddtData(final long estTimestamp, final EnumSet<EventFlag> eventFlags,
-                final int manufacturerSpecificByte,
-                final BigDecimal previousHeartBeatEventTime)
-            {
-                runOnUiThread(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        tv_estTimestamp.setText(String.valueOf(estTimestamp));
+        hrPcc.subscribePage4AddtDataEvent((estTimestamp, eventFlags, manufacturerSpecificByte, previousHeartBeatEventTime) -> runOnUiThread(() -> {
+            tv_estTimestamp.setText(String.valueOf(estTimestamp));
 
-                        tv_manufacturerSpecificByte.setText(String.format("0x%02X", manufacturerSpecificByte));
-                        tv_previousHeartBeatEventTime.setText(String.valueOf(previousHeartBeatEventTime));
-                    }
-                });
-            }
-        });
+            tv_manufacturerSpecificByte.setText(String.format("0x%02X", manufacturerSpecificByte));
+            tv_previousHeartBeatEventTime.setText(String.valueOf(previousHeartBeatEventTime));
+        }));
 
-        hrPcc.subscribeCumulativeOperatingTimeEvent(new ICumulativeOperatingTimeReceiver()
-        {
-            @Override
-            public void onNewCumulativeOperatingTime(final long estTimestamp, final EnumSet<EventFlag> eventFlags, final long cumulativeOperatingTime)
-            {
-                runOnUiThread(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        tv_estTimestamp.setText(String.valueOf(estTimestamp));
+        hrPcc.subscribeCumulativeOperatingTimeEvent((estTimestamp, eventFlags, cumulativeOperatingTime) -> runOnUiThread(() -> {
+            tv_estTimestamp.setText(String.valueOf(estTimestamp));
 
-                        tv_cumulativeOperatingTime.setText(String.valueOf(cumulativeOperatingTime));
-                    }
-                });
-            }
-        });
+            tv_cumulativeOperatingTime.setText(String.valueOf(cumulativeOperatingTime));
+        }));
 
-        hrPcc.subscribeManufacturerAndSerialEvent(new IManufacturerAndSerialReceiver()
-        {
-            @Override
-            public void onNewManufacturerAndSerial(final long estTimestamp, final EnumSet<EventFlag> eventFlags, final int manufacturerID,
-                final int serialNumber)
-            {
-                runOnUiThread(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        tv_estTimestamp.setText(String.valueOf(estTimestamp));
+        hrPcc.subscribeManufacturerAndSerialEvent((estTimestamp, eventFlags, manufacturerID, serialNumber) -> runOnUiThread(() -> {
+            tv_estTimestamp.setText(String.valueOf(estTimestamp));
 
-                        tv_manufacturerID.setText(String.valueOf(manufacturerID));
-                        tv_serialNumber.setText(String.valueOf(serialNumber));
-                    }
-                });
-            }
-        });
+            tv_manufacturerID.setText(String.valueOf(manufacturerID));
+            tv_serialNumber.setText(String.valueOf(serialNumber));
+        }));
 
-        hrPcc.subscribeVersionAndModelEvent(new IVersionAndModelReceiver()
-        {
-            @Override
-            public void onNewVersionAndModel(final long estTimestamp, final EnumSet<EventFlag> eventFlags, final int hardwareVersion,
-                final int softwareVersion, final int modelNumber)
-            {
-                runOnUiThread(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        tv_estTimestamp.setText(String.valueOf(estTimestamp));
+        hrPcc.subscribeVersionAndModelEvent((estTimestamp, eventFlags, hardwareVersion, softwareVersion, modelNumber) -> runOnUiThread(() -> {
+            tv_estTimestamp.setText(String.valueOf(estTimestamp));
 
-                        tv_hardwareVersion.setText(String.valueOf(hardwareVersion));
-                        tv_softwareVersion.setText(String.valueOf(softwareVersion));
-                        tv_modelNumber.setText(String.valueOf(modelNumber));
-                    }
-                });
-            }
-        });
+            tv_hardwareVersion.setText(String.valueOf(hardwareVersion));
+            tv_softwareVersion.setText(String.valueOf(softwareVersion));
+            tv_modelNumber.setText(String.valueOf(modelNumber));
+        }));
 
-        hrPcc.subscribeCalculatedRrIntervalEvent(new ICalculatedRrIntervalReceiver()
-        {
-            @Override
-            public void onNewCalculatedRrInterval(final long estTimestamp,
-                EnumSet<EventFlag> eventFlags, final BigDecimal rrInterval, final RrFlag flag)
-            {
-                runOnUiThread(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        tv_estTimestamp.setText(String.valueOf(estTimestamp));
-                        tv_rrFlag.setText(flag.toString());
+        hrPcc.subscribeCalculatedRrIntervalEvent((estTimestamp, eventFlags, rrInterval, flag) -> runOnUiThread(() -> {
+            tv_estTimestamp.setText(String.valueOf(estTimestamp));
+            tv_rrFlag.setText(flag.toString());
 
-                        // Mark RR with asterisk if source is not cached or page 4
-                        if (flag.equals(RrFlag.DATA_SOURCE_CACHED)
-                            || flag.equals(RrFlag.DATA_SOURCE_PAGE_4))
-                            tv_calculatedRrInterval.setText(String.valueOf(rrInterval));
-                        else
-                            tv_calculatedRrInterval.setText(String.valueOf(rrInterval) + "*");
-                    }
-                });
-            }
-        });
+            // Mark RR with asterisk if source is not cached or page 4
+            if (flag.equals(RrFlag.DATA_SOURCE_CACHED)
+                || flag.equals(RrFlag.DATA_SOURCE_PAGE_4))
+                tv_calculatedRrInterval.setText(String.valueOf(rrInterval));
+            else
+                tv_calculatedRrInterval.setText(String.valueOf(rrInterval) + "*");
+        }));
 
-        hrPcc.subscribeRssiEvent(new IRssiReceiver() {
-            @Override
-            public void onRssiData(final long estTimestamp, final EnumSet<EventFlag> evtFlags, final int rssi) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        tv_estTimestamp.setText(String.valueOf(estTimestamp));
-                        tv_rssi.setText(String.valueOf(rssi) + " dBm");
-                    }
-                });
-            }
-        });
+        hrPcc.subscribeRssiEvent((estTimestamp, evtFlags, rssi) -> runOnUiThread(() -> {
+            tv_estTimestamp.setText(String.valueOf(estTimestamp));
+            tv_rssi.setText(String.valueOf(rssi) + " dBm");
+        }));
     }
 
     protected IPluginAccessResultReceiver<AntPlusHeartRatePcc> base_IPluginAccessResultReceiver =
@@ -360,26 +260,14 @@ public abstract class Activity_HeartRateDisplayBase extends Activity
                     adlgBldr.setTitle("Missing Dependency");
                     adlgBldr.setMessage("The required service\n\"" + AntPlusHeartRatePcc.getMissingDependencyName() + "\"\n was not found. You need to install the ANT+ Plugins service or you may need to update your existing version if you already have it. Do you want to launch the Play Store to get it?");
                     adlgBldr.setCancelable(true);
-                    adlgBldr.setPositiveButton("Go to Store", new OnClickListener()
-                    {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which)
-                        {
-                            Intent startStore = null;
-                            startStore = new Intent(Intent.ACTION_VIEW,Uri.parse("market://details?id=" + AntPlusHeartRatePcc.getMissingDependencyPackageName()));
-                            startStore.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    adlgBldr.setPositiveButton("Go to Store", (dialog, which) -> {
+                        Intent startStore;
+                        startStore = new Intent(Intent.ACTION_VIEW,Uri.parse("market://details?id=" + AntPlusHeartRatePcc.getMissingDependencyPackageName()));
+                        startStore.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-                            Activity_HeartRateDisplayBase.this.startActivity(startStore);
-                        }
+                        Activity_HeartRateDisplayBase.this.startActivity(startStore);
                     });
-                    adlgBldr.setNegativeButton("Cancel", new OnClickListener()
-                    {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which)
-                        {
-                            dialog.dismiss();
-                        }
-                    });
+                    adlgBldr.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
 
                     final AlertDialog waitDialog = adlgBldr.create();
                     waitDialog.show();
@@ -408,16 +296,7 @@ public abstract class Activity_HeartRateDisplayBase extends Activity
             @Override
             public void onDeviceStateChange(final DeviceState newDeviceState)
             {
-                runOnUiThread(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        tv_status.setText(hrPcc.getDeviceName() + ": " + newDeviceState);
-                    }
-                });
-
-
+                runOnUiThread(() -> tv_status.setText(hrPcc.getDeviceName() + ": " + newDeviceState));
             }
         };
 

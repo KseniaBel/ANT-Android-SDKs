@@ -42,17 +42,17 @@ public class LayoutController_BloodPressure implements Closeable
         this.viewGroup_Parent = viewGroup_Parent;
         this.view_layout = inflator.inflate(R.layout.layout_bloodpressure, null);
 
-        TextView textView_Timestamp = (TextView)view_layout.findViewById(R.id.textView_Timestamp);
-        TextView textView_UserProfileIndex = (TextView)view_layout.findViewById(R.id.textView_UserProfileIndex);
-        TextView textView_SystolicPressure = (TextView)view_layout.findViewById(R.id.textView_SystolicPressure);
-        TextView textView_DiastolicPressure = (TextView)view_layout.findViewById(R.id.textView_DiastolicPressure);
-        TextView textView_MeanArterialPressure = (TextView)view_layout.findViewById(R.id.textView_MeanArterialPressure);
-        TextView textView_HeartRate = (TextView)view_layout.findViewById(R.id.textView_HeartRate);
-        TextView textView_MapThreeSampleMean = (TextView)view_layout.findViewById(R.id.textView_MapThreeSampleMean);
-        TextView textView_MapMorningValues = (TextView)view_layout.findViewById(R.id.textView_MapMorningValues);
-        TextView textView_MapEveningValues = (TextView)view_layout.findViewById(R.id.textView_MapEveningValues);
-        TextView textView_HeartRateType = (TextView)view_layout.findViewById(R.id.textView_HeartRateType);
-        TextView textView_Status = (TextView)view_layout.findViewById(R.id.textView_Status);
+        TextView textView_Timestamp = view_layout.findViewById(R.id.textView_Timestamp);
+        TextView textView_UserProfileIndex = view_layout.findViewById(R.id.textView_UserProfileIndex);
+        TextView textView_SystolicPressure = view_layout.findViewById(R.id.textView_SystolicPressure);
+        TextView textView_DiastolicPressure = view_layout.findViewById(R.id.textView_DiastolicPressure);
+        TextView textView_MeanArterialPressure = view_layout.findViewById(R.id.textView_MeanArterialPressure);
+        TextView textView_HeartRate = view_layout.findViewById(R.id.textView_HeartRate);
+        TextView textView_MapThreeSampleMean = view_layout.findViewById(R.id.textView_MapThreeSampleMean);
+        TextView textView_MapMorningValues = view_layout.findViewById(R.id.textView_MapMorningValues);
+        TextView textView_MapEveningValues = view_layout.findViewById(R.id.textView_MapEveningValues);
+        TextView textView_HeartRateType = view_layout.findViewById(R.id.textView_HeartRateType);
+        TextView textView_Status = view_layout.findViewById(R.id.textView_Status);
 
         //NOTE: All linked data messages must have the SAME timestamp
         if((fitBpmMesg.getTimestamp() != null) && (!fitBpmMesg.getTimestamp().getTimestamp().equals(DateTime.INVALID)))

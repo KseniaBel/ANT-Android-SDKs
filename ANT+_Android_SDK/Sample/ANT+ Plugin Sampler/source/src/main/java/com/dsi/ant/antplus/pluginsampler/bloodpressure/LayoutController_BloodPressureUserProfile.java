@@ -41,14 +41,14 @@ public class LayoutController_BloodPressureUserProfile implements Closeable
         this.viewGroup_Parent = viewGroup_Parent;
         this.view_layout = inflator.inflate(R.layout.layout_bloodpressure_user_profile, null);
 
-        TextView textView_MessageIndex = (TextView)view_layout.findViewById(R.id.textView_MessageIndex);
-        TextView textView_LocalId = (TextView)view_layout.findViewById(R.id.textView_LocalId);
-        TextView textView_FriendlyName = (TextView)view_layout.findViewById(R.id.textView_FriendlyName);
-        TextView textView_Gender = (TextView)view_layout.findViewById(R.id.textView_Gender);
-        TextView textView_Age = (TextView)view_layout.findViewById(R.id.textView_Age);
-        TextView textView_Height = (TextView)view_layout.findViewById(R.id.textView_Height);
-        TextView textView_Weight = (TextView)view_layout.findViewById(R.id.textView_Weight);
-        TextView textView_RestingHeartRate = (TextView)view_layout.findViewById(R.id.textView_RestingHeartRate);
+        TextView textView_MessageIndex = view_layout.findViewById(R.id.textView_MessageIndex);
+        TextView textView_LocalId = view_layout.findViewById(R.id.textView_LocalId);
+        TextView textView_FriendlyName = view_layout.findViewById(R.id.textView_FriendlyName);
+        TextView textView_Gender = view_layout.findViewById(R.id.textView_Gender);
+        TextView textView_Age = view_layout.findViewById(R.id.textView_Age);
+        TextView textView_Height = view_layout.findViewById(R.id.textView_Height);
+        TextView textView_Weight = view_layout.findViewById(R.id.textView_Weight);
+        TextView textView_RestingHeartRate = view_layout.findViewById(R.id.textView_RestingHeartRate);
 
         if((fitUserProfMesg.getMessageIndex() != null) && (!fitUserProfMesg.getMessageIndex().equals(Fit.UINT16_INVALID)))
             textView_MessageIndex.setText(fitUserProfMesg.getMessageIndex().toString());

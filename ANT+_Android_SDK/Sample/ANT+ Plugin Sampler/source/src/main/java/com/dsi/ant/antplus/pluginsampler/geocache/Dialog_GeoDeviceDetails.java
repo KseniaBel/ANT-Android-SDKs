@@ -9,6 +9,7 @@ All rights reserved.
 
 package com.dsi.ant.antplus.pluginsampler.geocache;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
@@ -36,6 +37,7 @@ import java.util.TimeZone;
 /**
  * Displays the device details and allows launching the programming or request access token screens.
  */
+@SuppressLint("ValidFragment")
 public class Dialog_GeoDeviceDetails extends DialogFragment
 {
     TextView textView_IdString;
@@ -85,88 +87,62 @@ public class Dialog_GeoDeviceDetails extends DialogFragment
         builder.setView(detailsView);
 
         // Add action buttons
-        builder.setPositiveButton("Close", new DialogInterface.OnClickListener()
-               {
-                   @Override
-                   public void onClick(DialogInterface dialog, int id) {
-                       // sign in the user ...
-                   }
-               });
+        builder.setPositiveButton("Close", (dialog, id) -> {
+            // sign in the user ...
+        });
 
-        textView_IdString = (TextView)detailsView.findViewById(R.id.textView_IdentificationString);
-        textView_PIN = (TextView)detailsView.findViewById(R.id.textView_PIN);
-        textView_Latitude = (TextView)detailsView.findViewById(R.id.textView_Latitude);
-        textView_Longitude = (TextView)detailsView.findViewById(R.id.textView_Longitude);
-        textView_HintString = (TextView)detailsView.findViewById(R.id.textView_HintString);
-        textView_LastVisit = (TextView)detailsView.findViewById(R.id.textView_LastVisitTimestamp);
-        textView_NumVisits = (TextView)detailsView.findViewById(R.id.textView_NumberOfVisits);
-        textView_HardwareVer = (TextView)detailsView.findViewById(R.id.textView_HardwareRevision);
-        textView_ManfID = (TextView)detailsView.findViewById(R.id.textView_ManufacturerID);
-        textView_ModelNum = (TextView)detailsView.findViewById(R.id.textView_ModelNumber);
-        textView_SoftwareVer = (TextView)detailsView.findViewById(R.id.textView_SoftwareRevision);
-        textView_SerialNum = (TextView)detailsView.findViewById(R.id.textView_SerialNumber);
-        textView_BatteryVoltage = (TextView)detailsView.findViewById(R.id.textView_BatteryVoltage);
-        textView_BatteryStatus = (TextView)detailsView.findViewById(R.id.textView_BatteryStatus);
-        textView_OperatingTime = (TextView)detailsView.findViewById(R.id.textView_CumulativeOperatingTime);
-        textView_OperatingTimeResolution = (TextView)detailsView.findViewById(R.id.textView_CumulativeOperatingTimeResolution);
+        textView_IdString = detailsView.findViewById(R.id.textView_IdentificationString);
+        textView_PIN = detailsView.findViewById(R.id.textView_PIN);
+        textView_Latitude = detailsView.findViewById(R.id.textView_Latitude);
+        textView_Longitude = detailsView.findViewById(R.id.textView_Longitude);
+        textView_HintString = detailsView.findViewById(R.id.textView_HintString);
+        textView_LastVisit = detailsView.findViewById(R.id.textView_LastVisitTimestamp);
+        textView_NumVisits = detailsView.findViewById(R.id.textView_NumberOfVisits);
+        textView_HardwareVer = detailsView.findViewById(R.id.textView_HardwareRevision);
+        textView_ManfID = detailsView.findViewById(R.id.textView_ManufacturerID);
+        textView_ModelNum = detailsView.findViewById(R.id.textView_ModelNumber);
+        textView_SoftwareVer = detailsView.findViewById(R.id.textView_SoftwareRevision);
+        textView_SerialNum = detailsView.findViewById(R.id.textView_SerialNumber);
+        textView_BatteryVoltage = detailsView.findViewById(R.id.textView_BatteryVoltage);
+        textView_BatteryStatus = detailsView.findViewById(R.id.textView_BatteryStatus);
+        textView_OperatingTime = detailsView.findViewById(R.id.textView_CumulativeOperatingTime);
+        textView_OperatingTimeResolution = detailsView.findViewById(R.id.textView_CumulativeOperatingTimeResolution);
 
         refreshData();
 
         //Set up button handlers
-        Button button_ProgramDevice = (Button)detailsView.findViewById(R.id.button_ProgramDevice);
-        button_ProgramDevice.setOnClickListener(new OnClickListener()
-                {
-                    @Override
-                    public void onClick(View v)
-                    {
-                        //Warn user they are going to program a device that was not originally programmed by this device
-                        //so they will be overwriting someone else's data
-                        //Note: The device based PIN is generated from the Settings.Secure.ANDROID_ID
-                        //and is persistent for this app on the phone it is installed on.
-                        if((deviceData.programmableData.identificationString.trim().length() != 0 //If the device itself is programmed
-                                    && deviceData.programmableData.PIN != 0xFFFFFFFF)    //and the PIN is programmed
-                                && !getDeviceBasedPIN(getActivity()).equals(deviceData.programmableData.PIN)) //and the app's persistent PIN doesn't match the programmed one
-                        {
-                            //Warn the user the PINs don't match and make them accept responsibility for reprogramming someone else's geocache
-                            AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
-                            dialogBuilder.setTitle("Incorrect PIN");
-                            dialogBuilder.setMessage("Your device's PIN does not match the geocache's PIN. This means you are probably trying to overwrite someone else's geocache data. If you continue, this might make them upset and hurt their feelings");
-                            dialogBuilder.setPositiveButton("I don't care, do it anyway", new DialogInterface.OnClickListener()
-                                    {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which)
-                                        {
-                                            showProgramDevice();
-                                        }
-                                    });
-                            dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener()
-                                    {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which)
-                                        {
-                                            //let dialog be dismissed
-                                        }
-                                    });
-
-                            dialogBuilder.create().show();
-                        }
-                        else    //else the PIN matches or it is unprogrammed so we can proceed straight to programming
-                        {
-                            showProgramDevice();
-                        }
-                    }
+        Button button_ProgramDevice = detailsView.findViewById(R.id.button_ProgramDevice);
+        button_ProgramDevice.setOnClickListener(v -> {
+            //Warn user they are going to program a device that was not originally programmed by this device
+            //so they will be overwriting someone else's data
+            //Note: The device based PIN is generated from the Settings.Secure.ANDROID_ID
+            //and is persistent for this app on the phone it is installed on.
+            if((deviceData.programmableData.identificationString.trim().length() != 0 //If the device itself is programmed
+                        && deviceData.programmableData.PIN != 0xFFFFFFFF)    //and the PIN is programmed
+                    && !getDeviceBasedPIN(getActivity()).equals(deviceData.programmableData.PIN)) //and the app's persistent PIN doesn't match the programmed one
+            {
+                //Warn the user the PINs don't match and make them accept responsibility for reprogramming someone else's geocache
+                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+                dialogBuilder.setTitle("Incorrect PIN");
+                dialogBuilder.setMessage("Your device's PIN does not match the geocache's PIN. This means you are probably trying to overwrite someone else's geocache data. If you continue, this might make them upset and hurt their feelings");
+                dialogBuilder.setPositiveButton("I don't care, do it anyway", (dialog, which) -> showProgramDevice());
+                dialogBuilder.setNegativeButton("Cancel", (dialog, which) -> {
+                    //let dialog be dismissed
                 });
 
-        Button button_ReqAuthToken = (Button)detailsView.findViewById(R.id.button_RequestAuthToken);
-        button_ReqAuthToken.setOnClickListener(new OnClickListener()
-                {
-                    @Override
-                    public void onClick(View v)
-                    {
-                        Dialog_GeoRequestAuthToken reqDialog = new Dialog_GeoRequestAuthToken(geoPcc, deviceData.deviceId, getDeviceBasedPIN(getActivity()));
-                        reqDialog.show(getFragmentManager(), "ReqAuthTokenDialog");
-                    }
-                });
+                dialogBuilder.create().show();
+            }
+            else    //else the PIN matches or it is unprogrammed so we can proceed straight to programming
+            {
+                showProgramDevice();
+            }
+        });
+
+        Button button_ReqAuthToken = detailsView.findViewById(R.id.button_RequestAuthToken);
+        button_ReqAuthToken.setOnClickListener(v -> {
+            Dialog_GeoRequestAuthToken reqDialog = new Dialog_GeoRequestAuthToken(geoPcc, deviceData.deviceId, getDeviceBasedPIN(getActivity()));
+            reqDialog.show(getFragmentManager(), "ReqAuthTokenDialog");
+        });
 
         return builder.create();
     }
@@ -202,26 +178,16 @@ public class Dialog_GeoDeviceDetails extends DialogFragment
                             if(progdData.numberOfVisits != null)
                                 deviceData.programmableData.numberOfVisits = progdData.numberOfVisits;
 
-                            getActivity().runOnUiThread(new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    Toast.makeText(getActivity(), "Programming Successful", Toast.LENGTH_SHORT).show();
-                                    refreshData();
-                                }
+                            getActivity().runOnUiThread(() -> {
+                                Toast.makeText(getActivity(), "Programming Successful", Toast.LENGTH_SHORT).show();
+                                refreshData();
                             });
                         }
                         else if(resultCode == -1)   //Device communication failure, device was removed from list and data is now invalid, bail to scan list
                         {
-                            getActivity().runOnUiThread(new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    Toast.makeText(getActivity(), "Device Communication Failure, dropped from list", Toast.LENGTH_SHORT).show();
-                                    dismiss();
-                                }
+                            getActivity().runOnUiThread(() -> {
+                                Toast.makeText(getActivity(), "Device Communication Failure, dropped from list", Toast.LENGTH_SHORT).show();
+                                dismiss();
                             });
                         }
                     }
