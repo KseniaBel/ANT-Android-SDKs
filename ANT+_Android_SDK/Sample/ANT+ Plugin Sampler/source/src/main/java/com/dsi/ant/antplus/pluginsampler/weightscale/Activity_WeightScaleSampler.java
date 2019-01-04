@@ -222,7 +222,7 @@ public class Activity_WeightScaleSampler extends FragmentActivity
          * Subscribe to all the heart rate events, connecting them to display
          * their data.
          */
-        private void subscribeToEvents()
+        protected void subscribeToEvents()
         {
             wgtPcc
                 .subscribeManufacturerIdentificationEvent(new IManufacturerIdentificationReceiver()

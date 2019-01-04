@@ -51,4 +51,5 @@ dependencies {
     compile 'com.android.support:support-v4:26.1.0'
     implementation files('libs/fit_16.00.jar')
     implementation files('libs/antpluginlib_3-6-0.jar')
+    implementation 'com.jjoe64:graphview:4.2.2'
 }

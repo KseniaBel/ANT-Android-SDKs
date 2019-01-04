@@ -10,8 +10,6 @@ All rights reserved.
 package com.dsi.ant.antplus.pluginsampler;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
@@ -19,7 +17,6 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
@@ -39,6 +36,7 @@ import com.dsi.ant.antplus.pluginsampler.geocache.Activity_GeoScanList;
 import com.dsi.ant.antplus.pluginsampler.heartrate.Activity_AsyncScanHeartRateSampler;
 import com.dsi.ant.antplus.pluginsampler.heartrate.Activity_SearchUiHeartRateSampler;
 import com.dsi.ant.antplus.pluginsampler.multidevicesearch.Activity_MultiDeviceFilter;
+import com.dsi.ant.antplus.pluginsampler.pulsezones.Dialog_DataInput;
 import com.dsi.ant.antplus.pluginsampler.watchdownloader.Activity_WatchScanList;
 import com.dsi.ant.antplus.pluginsampler.weightscale.Activity_WeightScaleSampler;
 import com.dsi.ant.plugins.antplus.pccbase.AntPluginPcc;
@@ -72,6 +70,7 @@ public class Activity_Dashboard extends FragmentActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
         List<Map<String,String>> menuItems = new ArrayList<Map<String,String>>();
+        menuItems.add(new HashMap<String,String>(){{put("title","Pulse Zone Display");put("desc","Receive from HRM sensor");}});
         menuItems.add(new HashMap<String,String>(){{put("title","Heart Rate Display");put("desc","Receive from HRM sensors");}});
         menuItems.add(new HashMap<String,String>(){{put("title","Bike Power Display");put("desc","Receive from Bike Power sensors");}});
         menuItems.add(new HashMap<String,String>(){{put("title","Bike Cadence Display");put("desc","Receive from Bike Cadence sensors");}});
@@ -113,7 +112,11 @@ public class Activity_Dashboard extends FragmentActivity
     {
         int j=0;
 
-        if(position == j++)
+        if(position == j++) {
+            // Settings must be configured before starting the PulseZonesFitness Activity
+            Dialog_DataInput dialog = new Dialog_DataInput();
+            dialog.show(getSupportFragmentManager(), "Input User Data");
+        } else if(position == j++)
         {
             Intent i = new Intent(this, Activity_SearchUiHeartRateSampler.class);
             startActivity(i);
@@ -229,26 +232,13 @@ public class Activity_Dashboard extends FragmentActivity
                 adlgBldr.setTitle("Missing Dependency");
                 adlgBldr.setMessage("This application requires the ANT+ Plugins, would you like to install them?");
                 adlgBldr.setCancelable(true);
-                adlgBldr.setPositiveButton("Go to Store", new OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                        Intent startStore = null;
-                        startStore = new Intent(Intent.ACTION_VIEW,Uri.parse("market://details?id=com.dsi.ant.plugins.antplus"));
-                        startStore.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                adlgBldr.setPositiveButton("Go to Store", (dialog, which) -> {
+                    Intent startStore = new Intent(Intent.ACTION_VIEW,Uri.parse("market://details?id=com.dsi.ant.plugins.antplus"));
+                    startStore.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-                        Activity_Dashboard.this.startActivity(startStore);
-                    }
+                    Activity_Dashboard.this.startActivity(startStore);
                 });
-                adlgBldr.setNegativeButton("Cancel", new OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                        dialog.dismiss();
-                    }
-                });
+                adlgBldr.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
 
                 final AlertDialog waitDialog = adlgBldr.create();
                 waitDialog.show();
@@ -271,15 +261,8 @@ public class Activity_Dashboard extends FragmentActivity
             if (mList != null)
                 return;
             mAdapter = adapter;
-            mList = (ListView)findViewById(android.R.id.list);
-            mList.setOnItemClickListener(new AdapterView.OnItemClickListener()
-            {
-                @Override
-                public void onItemClick(AdapterView<?>  parent, View v, int position, long id)
-                {
-                    onListItemClick((ListView)parent, v, position, id);
-                }
-            });
+            mList = findViewById(android.R.id.list);
+            mList.setOnItemClickListener((parent, v, position, id) -> onListItemClick((ListView)parent, v, position, id));
             mList.setAdapter(adapter);
         }
     }

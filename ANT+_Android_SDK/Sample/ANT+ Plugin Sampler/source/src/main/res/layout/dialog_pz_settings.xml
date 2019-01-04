@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE AndroidXML>
+<!--
+This software is subject to the license described in the License.txt file
+included with this software distribution. You may not use this file except in compliance
+with this license.
+
+Copyright (c) Dynastream Innovations Inc. 2013
+All rights reserved.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/scrollView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:paddingBottom="10dp"
+            android:paddingTop="10dp"
+            android:text="Input data:" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#EBEBEB"
+            android:paddingBottom="3dp"
+            android:paddingLeft="5dp"
+            android:paddingRight="10dp"
+            android:paddingTop="3dp" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="5dp"
+                android:text="Gender:" />
+
+            <RadioGroup
+                android:id="@+id/radioGroupSex"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:background="#EBEBEB"
+                android:orientation="horizontal"
+                android:paddingBottom="3dp"
+                android:paddingLeft="5dp"
+                android:paddingRight="10dp"
+                android:paddingTop="3dp" >
+
+                <RadioButton
+                    android:id="@+id/radioButton_Female"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginRight="10dp"
+                    android:checked="true"
+                    android:text="Female" />
+
+                <RadioButton
+                    android:id="@+id/radioButton_Male"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="Male" />
+
+            </RadioGroup>
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#D7D7D7"
+            android:paddingBottom="3dp"
+            android:paddingLeft="5dp"
+            android:paddingRight="10dp"
+            android:paddingTop="3dp" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="5dp"
+                android:text="Age:" />
+
+            <EditText
+                android:id="@+id/editText_Age"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:contextClickable="false"
+                android:gravity="center"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="3"
+                android:minWidth="125dp"
+                tools:ignore="TextFields" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#EBEBEB"
+            android:paddingBottom="3dp"
+            android:paddingLeft="5dp"
+            android:paddingRight="10dp"
+            android:paddingTop="3dp" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="5dp"
+                android:text="Resting Heart Rate:" />
+
+            <EditText
+                android:id="@+id/editText_RestHR"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:gravity="center"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="2"
+                android:minWidth="125dp" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#D7D7D7"
+            android:paddingBottom="3dp"
+            android:paddingLeft="5dp"
+            android:paddingRight="10dp"
+            android:paddingTop="3dp" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="5dp"
+                android:text="Max Heart Rate \n(If unknown, calculated automatically):"/>
+
+            <EditText
+                android:id="@+id/editText_MaxHR"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:gravity="center"
+                android:hint="0"
+                android:inputType="number"
+                android:maxLength="3"
+                android:minWidth="125dp" />
+
+        </RelativeLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:paddingBottom="10dp"
+            android:paddingTop="10dp"
+            android:text="Choose HR Zone:" />
+
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#EBEBEB"
+                android:paddingBottom="3dp"
+                android:paddingLeft="5dp"
+                android:paddingRight="10dp"
+                android:paddingTop="3dp">
+
+                <RadioGroup
+                    android:id="@+id/radioGroupZones"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:background="#EBEBEB"
+                    android:orientation="vertical"
+                    android:paddingBottom="3dp"
+                    android:paddingRight="10dp"
+                    android:paddingTop="3dp">
+
+                    <RadioButton
+                        android:id="@+id/radioButton_Zone1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginRight="5dp"
+                        android:checked="true"
+                        android:text="Zone 1: Healthy Heart(40-52%)" />
+
+                    <RadioButton
+                        android:id="@+id/radioButton_Zone2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:text="Zone 2: Easy(52-64%)" />
+
+                    <RadioButton
+                        android:id="@+id/radioButton_Zone3"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:text="Zone 3: Aerobic(64-76%)" />
+
+                    <RadioButton
+                        android:id="@+id/radioButton_Zone4"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:text="Zone 4: Anaerobic Threshold(76-88%)" />
+
+                    <RadioButton
+                        android:id="@+id/radioButton_Zone5"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:text="Zone 5: VO2 Maximum(88-100%)" />
+
+                </RadioGroup>
+
+
+            </RelativeLayout>
+
+        </LinearLayout>
+
+</ScrollView>

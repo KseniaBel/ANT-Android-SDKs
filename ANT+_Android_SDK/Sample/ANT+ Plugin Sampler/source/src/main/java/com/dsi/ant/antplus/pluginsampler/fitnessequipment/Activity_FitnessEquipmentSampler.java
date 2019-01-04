@@ -500,11 +500,131 @@ public class Activity_FitnessEquipmentSampler extends Activity
 
         resetPcc();
     }
+    /**
+     * Subscribe to all the data events, connecting them to display their data.
+     */
+    private void subscribeToEvents()
+    {
+        fePcc.subscribeGeneralFitnessEquipmentDataEvent((estTimestamp, eventFlags, elapsedTime, cumulativeDistance, instantaneousSpeed, virtualInstantaneousSpeed, instantaneousHeartRate, heartRateDataSource) -> runOnUiThread(() -> {
+            tv_estTimestamp.setText(String.valueOf(estTimestamp));
+            if(elapsedTime.intValue() == -1)
+                tv_time.setText("Invalid");
+            else
+                tv_time.setText(String.valueOf(elapsedTime) + "s");
+
+            if(cumulativeDistance == -1)
+                tv_distance.setText("Invalid");
+            else
+                tv_distance.setText(String.valueOf(cumulativeDistance) + "m");
+
+            if(instantaneousSpeed.intValue() == -1)
+                tv_speed.setText("Invalid");
+            else
+                tv_speed.setText(String.valueOf(instantaneousSpeed) + "m/s");
+
+            if(virtualInstantaneousSpeed)
+                tv_speed.setText(tv_speed.getText() + " (Virtual)");
+
+            if(instantaneousHeartRate == -1)
+                tv_heartRate.setText("Invalid");
+            else
+                tv_heartRate.setText(String.valueOf(instantaneousHeartRate) + "bpm");
+
+            switch(heartRateDataSource)
+            {
+                case ANTPLUS_HRM:
+                case EM_5KHz:
+                case HAND_CONTACT_SENSOR:
+                case UNKNOWN:
+                    tv_heartRateSource.setText(heartRateDataSource.toString());
+                    break;
+                case UNRECOGNIZED:
+                    Toast.makeText(Activity_FitnessEquipmentSampler.this,
+                            "Failed: UNRECOGNIZED. PluginLib Upgrade Required?",
+                            Toast.LENGTH_SHORT).show();
+                    break;
+            }
+
+        }));
+
+        fePcc.subscribeLapOccuredEvent((estTimestamp, eventFlags, lapCount) -> runOnUiThread(() -> {
+            tv_estTimestamp.setText(String.valueOf(estTimestamp));
+
+            tv_laps.setText(String.valueOf(lapCount));
+        }));
+
+        fePcc.subscribeGeneralSettingsEvent((estTimestamp, eventFlags, cycleLength, inclinePercentage, resistanceLevel) -> runOnUiThread(() -> {
+            tv_estTimestamp.setText(String.valueOf(estTimestamp));
+
+            if(cycleLength.intValue() == -1)
+                tv_cycleLength.setText("Invalid");
+            else
+                tv_cycleLength.setText(String.valueOf(cycleLength) + "m");
+
+            if(inclinePercentage.intValue() == 0x7FFF)
+                tv_inclinePercentage.setText("Invalid");
+            else
+                tv_inclinePercentage.setText(String.valueOf(inclinePercentage) + "%");
+
+            if(resistanceLevel == -1)
+                tv_resistanceLevel.setText("Invalid");
+            else
+                //TODO If this is a Fitness Equipment Controls device, this represents the current set resistance level at 0.5% per unit from 0% to 100%
+                tv_resistanceLevel.setText(String.valueOf(resistanceLevel));
+        }));
+
+        fePcc.subscribeGeneralMetabolicDataEvent((estTimestamp, eventFlags, instantaneousMetabolicEquivalents, instantaneousCaloricBurn, cumulativeCalories) -> runOnUiThread(() -> {
+            tv_estTimestamp.setText(String.valueOf(estTimestamp));
+
+            if(instantaneousMetabolicEquivalents.intValue() == -1)
+                tv_mets.setText("Invalid");
+            else
+                tv_mets.setText(String.valueOf(instantaneousMetabolicEquivalents) + "METs");
+
+            if(instantaneousCaloricBurn.intValue() == -1)
+                tv_caloricBurn.setText("Invalid");
+            else
+                tv_caloricBurn.setText(String.valueOf(instantaneousCaloricBurn) + "kcal/h");
+
+            if(cumulativeCalories == -1)
+                tv_calories.setText("Invalid");
+            else
+                tv_calories.setText(String.valueOf(cumulativeCalories) + "kcal");
+        }));
+
+        fePcc.subscribeManufacturerIdentificationEvent((estTimestamp, eventFlags, hardwareRevision, manufacturerID, modelNumber) -> runOnUiThread(() -> {
+            tv_estTimestamp.setText(String.valueOf(estTimestamp));
+
+            tv_hardwareRevision.setText(String.valueOf(hardwareRevision));
+            tv_manufacturerID.setText(String.valueOf(manufacturerID));
+            tv_modelNumber.setText(String.valueOf(modelNumber));
+        }));
+
+        fePcc.subscribeProductInformationEvent((estTimestamp, eventFlags, mainSoftwareRevision, supplementalSoftwareRevision, serialNumber) -> runOnUiThread(() -> {
+            tv_estTimestamp.setText(String.valueOf(estTimestamp));
+
+            tv_mainSoftwareRevision.setText(String
+                    .valueOf(mainSoftwareRevision));
+
+            if (supplementalSoftwareRevision == -2)
+                // Plugin Service installed does not support supplemental revision
+                tv_supplementalSoftwareRevision.setText("?");
+            else if (supplementalSoftwareRevision == 0xFF)
+                // Invalid supplemental revision
+                tv_supplementalSoftwareRevision.setText("");
+            else
+                // Valid supplemental revision
+                tv_supplementalSoftwareRevision.setText(", " + String
+                        .valueOf(supplementalSoftwareRevision));
+
+            tv_serialNumber.setText(String.valueOf(serialNumber));
+        }));
+    }
 
     /**
      * Resets the PCC connection to request access again and clears any existing display data.
      */
-    private void resetPcc()
+    void resetPcc()
     {
         //Release the old access if it exists
         if(releaseHandle != null)
@@ -557,13 +677,8 @@ public class Activity_FitnessEquipmentSampler extends Activity
         tv_supplementalSoftwareRevision.setText("");
         tv_serialNumber.setText("---");
 
-        final IPluginAccessResultReceiver<AntPlusFitnessEquipmentPcc> mPluginAccessResultReceiver =
-                new IPluginAccessResultReceiver<AntPlusFitnessEquipmentPcc>()
-                {
-                //Handle the result, connecting to events on success or reporting failure to user.
-                @Override
-                public void onResultReceived(AntPlusFitnessEquipmentPcc result,
-                    RequestAccessResult resultCode, DeviceState initialDeviceState)
+        final IPluginAccessResultReceiver<AntPlusFitnessEquipmentPcc> mPluginAccessResultReceiver =(AntPlusFitnessEquipmentPcc result,
+                    RequestAccessResult resultCode, DeviceState initialDeviceState) ->
                 {
                     switch(resultCode)
                     {
@@ -625,129 +740,8 @@ public class Activity_FitnessEquipmentSampler extends Activity
                             tv_status.setText("Error. Do Menu->Reset.");
                             break;
                     }
-                }
-
-                /**
-                 * Subscribe to all the data events, connecting them to display their data.
-                 */
-                private void subscribeToEvents()
-                {
-                    fePcc.subscribeGeneralFitnessEquipmentDataEvent((estTimestamp, eventFlags, elapsedTime, cumulativeDistance, instantaneousSpeed, virtualInstantaneousSpeed, instantaneousHeartRate, heartRateDataSource) -> runOnUiThread(() -> {
-                        tv_estTimestamp.setText(String.valueOf(estTimestamp));
-                        if(elapsedTime.intValue() == -1)
-                            tv_time.setText("Invalid");
-                        else
-                            tv_time.setText(String.valueOf(elapsedTime) + "s");
-
-                        if(cumulativeDistance == -1)
-                            tv_distance.setText("Invalid");
-                        else
-                            tv_distance.setText(String.valueOf(cumulativeDistance) + "m");
-
-                        if(instantaneousSpeed.intValue() == -1)
-                            tv_speed.setText("Invalid");
-                        else
-                            tv_speed.setText(String.valueOf(instantaneousSpeed) + "m/s");
-
-                        if(virtualInstantaneousSpeed)
-                            tv_speed.setText(tv_speed.getText() + " (Virtual)");
-
-                        if(instantaneousHeartRate == -1)
-                            tv_heartRate.setText("Invalid");
-                        else
-                            tv_heartRate.setText(String.valueOf(instantaneousHeartRate) + "bpm");
-
-                        switch(heartRateDataSource)
-                        {
-                            case ANTPLUS_HRM:
-                            case EM_5KHz:
-                            case HAND_CONTACT_SENSOR:
-                            case UNKNOWN:
-                                tv_heartRateSource.setText(heartRateDataSource.toString());
-                                break;
-                            case UNRECOGNIZED:
-                                Toast.makeText(Activity_FitnessEquipmentSampler.this,
-                                    "Failed: UNRECOGNIZED. PluginLib Upgrade Required?",
-                                    Toast.LENGTH_SHORT).show();
-                                break;
-                        }
-
-                    }));
-
-                    fePcc.subscribeLapOccuredEvent((estTimestamp, eventFlags, lapCount) -> runOnUiThread(() -> {
-                        tv_estTimestamp.setText(String.valueOf(estTimestamp));
-
-                        tv_laps.setText(String.valueOf(lapCount));
-                    }));
-
-                    fePcc.subscribeGeneralSettingsEvent((estTimestamp, eventFlags, cycleLength, inclinePercentage, resistanceLevel) -> runOnUiThread(() -> {
-                        tv_estTimestamp.setText(String.valueOf(estTimestamp));
-
-                        if(cycleLength.intValue() == -1)
-                            tv_cycleLength.setText("Invalid");
-                        else
-                            tv_cycleLength.setText(String.valueOf(cycleLength) + "m");
-
-                        if(inclinePercentage.intValue() == 0x7FFF)
-                            tv_inclinePercentage.setText("Invalid");
-                        else
-                            tv_inclinePercentage.setText(String.valueOf(inclinePercentage) + "%");
-
-                        if(resistanceLevel == -1)
-                            tv_resistanceLevel.setText("Invalid");
-                        else
-                            //TODO If this is a Fitness Equipment Controls device, this represents the current set resistance level at 0.5% per unit from 0% to 100%
-                            tv_resistanceLevel.setText(String.valueOf(resistanceLevel));
-                    }));
-
-                    fePcc.subscribeGeneralMetabolicDataEvent((estTimestamp, eventFlags, instantaneousMetabolicEquivalents, instantaneousCaloricBurn, cumulativeCalories) -> runOnUiThread(() -> {
-                        tv_estTimestamp.setText(String.valueOf(estTimestamp));
-
-                        if(instantaneousMetabolicEquivalents.intValue() == -1)
-                            tv_mets.setText("Invalid");
-                        else
-                            tv_mets.setText(String.valueOf(instantaneousMetabolicEquivalents) + "METs");
-
-                        if(instantaneousCaloricBurn.intValue() == -1)
-                            tv_caloricBurn.setText("Invalid");
-                        else
-                            tv_caloricBurn.setText(String.valueOf(instantaneousCaloricBurn) + "kcal/h");
-
-                        if(cumulativeCalories == -1)
-                            tv_calories.setText("Invalid");
-                        else
-                            tv_calories.setText(String.valueOf(cumulativeCalories) + "kcal");
-                    }));
-
-                    fePcc.subscribeManufacturerIdentificationEvent((estTimestamp, eventFlags, hardwareRevision, manufacturerID, modelNumber) -> runOnUiThread(() -> {
-                        tv_estTimestamp.setText(String.valueOf(estTimestamp));
-
-                        tv_hardwareRevision.setText(String.valueOf(hardwareRevision));
-                        tv_manufacturerID.setText(String.valueOf(manufacturerID));
-                        tv_modelNumber.setText(String.valueOf(modelNumber));
-                    }));
-
-                    fePcc.subscribeProductInformationEvent((estTimestamp, eventFlags, mainSoftwareRevision, supplementalSoftwareRevision, serialNumber) -> runOnUiThread(() -> {
-                        tv_estTimestamp.setText(String.valueOf(estTimestamp));
-
-                        tv_mainSoftwareRevision.setText(String
-                            .valueOf(mainSoftwareRevision));
-
-                        if (supplementalSoftwareRevision == -2)
-                            // Plugin Service installed does not support supplemental revision
-                            tv_supplementalSoftwareRevision.setText("?");
-                        else if (supplementalSoftwareRevision == 0xFF)
-                            // Invalid supplemental revision
-                            tv_supplementalSoftwareRevision.setText("");
-                        else
-                            // Valid supplemental revision
-                            tv_supplementalSoftwareRevision.setText(", " + String
-                                .valueOf(supplementalSoftwareRevision));
-
-                        tv_serialNumber.setText(String.valueOf(serialNumber));
-                    }));
-                }
                 };
+
 
         IDeviceStateChangeReceiver mDeviceStateChangeReceiver =
                 //Receives state changes and shows it on the status display line

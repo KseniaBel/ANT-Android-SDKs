@@ -35,5 +35,8 @@ All rights reserved.
     <string name="label_selectAll">Select All</string>
     <string name="label_deviceTypeFilter">Select Device Types to Search:</string>
     <string name="label_RSSI">RSSI: </string>
+    <string name="_restHr">0</string>
+    <string name="_maxHr">0</string>
+    <string name="_age">0</string>
 
 </resources>
