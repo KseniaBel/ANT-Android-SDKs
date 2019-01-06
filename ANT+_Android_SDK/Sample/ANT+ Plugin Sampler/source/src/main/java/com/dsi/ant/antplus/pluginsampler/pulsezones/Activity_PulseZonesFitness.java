@@ -1,12 +1,16 @@
 package com.dsi.ant.antplus.pluginsampler.pulsezones;
 
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.widget.Chronometer;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.dsi.ant.antplus.pluginsampler.R;
 import com.dsi.ant.antplus.pluginsampler.multidevicesearch.Activity_MultiDeviceSearchSampler;
@@ -34,7 +38,6 @@ public class Activity_PulseZonesFitness extends Activity {
 
     TextView tv_status;
     TextView tv_heartRate;
-    TextView tv_time;
 
     GraphView graph;
     long startTimeInMillisec;
@@ -48,6 +51,9 @@ public class Activity_PulseZonesFitness extends Activity {
     int zone;
     int lowPulseLimit;
     int highPulseLimit;
+    SQLiteDatabase database;
+
+    private CustomChronometer chronometer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,14 +62,17 @@ public class Activity_PulseZonesFitness extends Activity {
 
         tv_status = findViewById(R.id.textView_ZoneStatus);
         tv_heartRate = findViewById(R.id.textView_HeartRatePulseZone);
-        tv_time = findViewById(R.id.textView_TimePulseZone);
+        chronometer = findViewById(R.id.chronometer);
         tv_status.setText("Connecting...");
 
         graph = findViewById(R.id.graph);
         series = new LineGraphSeries<>();
         graph.addSeries(series);
         graph.getViewport().setXAxisBoundsManual(true);
+        graph.getViewport().setMinX(0);
         graph.getViewport().setMaxX(30);
+        graph.getViewport().setScrollable(true);
+        graph.getGridLabelRenderer().setLabelVerticalWidth(60);
         series.setColor(Color.GREEN);
         series.setDrawDataPoints(true);
         series.setDataPointsRadius(10);
@@ -71,6 +80,9 @@ public class Activity_PulseZonesFitness extends Activity {
 
         settingsInit();
         calculateZonePulse(restHr, maxHr, zone);
+
+        //Create database
+        database =  new FitnessSQLiteDBHelper(this).getWritableDatabase();
 
         handleReset();
     }
@@ -86,13 +98,6 @@ public class Activity_PulseZonesFitness extends Activity {
         age = settings.getAge();
         restHr = settings.getrestHr();
         maxHr = settings.getMaxHr();
-        if(maxHr == 0) {
-            if(gender == 0) {
-                maxHr = (int) Math.round(209 - age * 0.7);
-            } else {
-                maxHr = (int) Math.round(214 - age * 0.8);
-            }
-        }
         zone = settings.getZone();
     }
 
@@ -137,11 +142,11 @@ public class Activity_PulseZonesFitness extends Activity {
      * Switches the active view to the data display and subscribes to all the data events
      */
     public void subscribeToHrEvents() {
-        startTimeInMillisec = System.currentTimeMillis();
         hrPcc.subscribeHeartRateDataEvent((estTimestamp, eventFlags, computedHeartRate, heartBeatCount, heartBeatEventTime, dataState) -> {
             // Mark heart rate with asterisk if zero detected
             final String textHeartRate = String.valueOf(computedHeartRate);
 
+            //Set vibration
             if(computedHeartRate > highPulseLimit || computedHeartRate < lowPulseLimit) {
                 // Get instance of Vibrator from current Context
                 Vibrator mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
@@ -151,11 +156,23 @@ public class Activity_PulseZonesFitness extends Activity {
             }
 
             runOnUiThread(() -> {
+                //Synchronization of starting time of the readings and chronometer start
+                if(!chronometer.isRunning()) {
+                    startTimeInMillisec = System.currentTimeMillis();
+                    chronometer.start();
+                }
+
                 int realTime = (int)(System.currentTimeMillis() - startTimeInMillisec)/1000;
                 series.appendData(new DataPoint(realTime, computedHeartRate), true, 1000);
 
+                //Insert values into database
+                ContentValues values = new ContentValues();
+                values.put(FitnessSQLiteDBHelper.RECORDS_COLUMN_HR, computedHeartRate);
+                values.put(FitnessSQLiteDBHelper.RECORDS_TIMESTAMP, realTime);
+                long newRowId = database.insert(FitnessSQLiteDBHelper.RECORDS_TABLE_NAME, null, values);
+                logger.info("The new row id is " + newRowId);
+
                 tv_heartRate.setText(textHeartRate);
-                tv_time.setText(Long.toString(estTimestamp));
             });
         });
     }
@@ -218,6 +235,8 @@ public class Activity_PulseZonesFitness extends Activity {
 
     @Override
     protected void onDestroy() {
+        chronometer.stop();
+        database.close();
         releaseHandle.close();
         super.onDestroy();
     }

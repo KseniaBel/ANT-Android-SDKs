@@ -7,7 +7,9 @@ package com.dsi.ant.antplus.pluginsampler.pulsezones;
 import com.dsi.ant.antplus.pluginsampler.R;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.support.v4.app.DialogFragment;
 import android.content.Intent;
 import android.os.Bundle;
@@ -22,10 +24,11 @@ import android.widget.Toast;
 public class Dialog_DataInput extends  DialogFragment {
 
     RadioGroup radioSexGroup;
-    EditText et_age;
-    EditText et_rest_hr;
+    ValidatableEditText et_age;
+    ValidatableEditText et_rest_hr;
     EditText et_max_hr;
     RadioGroup radioZones;
+    SharedPreferences myPrefs;
 
     int selectedIdSex = 0;
     int selectedIdZone = 1;
@@ -33,7 +36,11 @@ public class Dialog_DataInput extends  DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity())
-                .setTitle("Settings Configuration");
+                .setTitle("Settings Configuration")
+                .setPositiveButton("OK", (DialogInterface dialog, int which) -> {})
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                    //Let dialog dismiss
+                 });
 
         // Get the layout inflater
         LayoutInflater inflater = getActivity().getLayoutInflater();
@@ -56,12 +63,18 @@ public class Dialog_DataInput extends  DialogFragment {
         detailsView.findViewById(R.id.radioButton_Zone4).setOnClickListener((View view) -> selectedIdZone = 4);
         detailsView.findViewById(R.id.radioButton_Zone5).setOnClickListener((View view) -> selectedIdZone = 5);
 
-        // Add action buttons
-        builder.setPositiveButton("OK", (DialogInterface dialog, int which) -> {});
 
-                builder.setNegativeButton("Cancel", (dialog, which) -> {
-                    //Let dialog dismiss
-                });
+        //Get shared preferences
+        myPrefs = detailsView.getContext().getSharedPreferences("prefID", Context.MODE_PRIVATE);
+        int userSex = myPrefs.getInt("userSexKey", R.id.radioButton_Female);
+        radioSexGroup.check(userSex);
+        int age = myPrefs.getInt("ageKey", 0);
+        et_age.setText((String.valueOf(age)));
+        int restHr = myPrefs.getInt("restHrKey",0);
+        et_rest_hr.setText((String.valueOf(restHr)));
+        int maxHr = myPrefs.getInt("maxHrKey",0);
+        et_max_hr.setText((String.valueOf(maxHr)));
+
         return builder.create();
     }
 
@@ -72,29 +85,48 @@ public class Dialog_DataInput extends  DialogFragment {
         if(d != null) {
             Button positiveButton = d.getButton(Dialog.BUTTON_POSITIVE);
             positiveButton.setOnClickListener(v -> {
-                Boolean wantToCloseDialog = false;
-                if (TextUtils.isEmpty(et_age.getText()) || Integer.parseInt(et_age.getText().toString()) <= 0 || Integer.parseInt(et_age.getText().toString()) > 130) {
-                    Toast.makeText(getContext(), "Please, input a valid age", Toast.LENGTH_SHORT).show();
-                } else if(TextUtils.isEmpty(et_rest_hr.getText()) || Integer.parseInt(et_rest_hr.getText().toString()) <= 0) {
-                    Toast.makeText(getContext(), "Please, input a valid rest heart rate", Toast.LENGTH_SHORT).show();
-                } else if(TextUtils.isEmpty(et_max_hr.getText()) || Integer.parseInt(et_max_hr.getText().toString()) < 0) {
-                    Toast.makeText(getContext(), "Please, input a valid maximum heart rate or 0", Toast.LENGTH_SHORT).show();
-                } else if(Integer.parseInt(et_rest_hr.getText().toString()) >= Integer.parseInt(et_max_hr.getText().toString())) {
-                    Toast.makeText(getContext(), "Maximum heart rate cannot be lower than rest heart rate", Toast.LENGTH_SHORT).show();
-                } else {
+                if(isFormValid()) {
+                    Boolean wantToCloseDialog = false;
                     int ageFieldValue = Integer.parseInt(et_age.getText().toString());
                     int restHrFieldValue = Integer.parseInt(et_rest_hr.getText().toString());
-                    int maxHrFieldValue = Integer.parseInt(et_max_hr.getText().toString());
+                    int maxHrFieldValue;
+                    if(TextUtils.isEmpty(et_max_hr.getText())) {
+                        maxHrFieldValue = calculateMaxHrFieldValue(ageFieldValue);
+                    } else {
+                        maxHrFieldValue = Integer.parseInt(et_max_hr.getText().toString());
+                    }
+
+                    myPrefs = getContext().getSharedPreferences("prefID", Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = myPrefs.edit();
+                    editor.putInt("userSexKey", radioSexGroup.getCheckedRadioButtonId());
+                    editor.putInt("ageKey", ageFieldValue);
+                    editor.putInt("restHrKey", restHrFieldValue);
+                    editor.putInt("maxHrKey", maxHrFieldValue);
+
+                    editor.apply();
                     wantToCloseDialog = true;
                     Intent intent = new Intent(Dialog_DataInput.this.getActivity(), Activity_PulseZonesFitness.class);
-
                     intent.putExtra("settings", new PulseZoneSettings(selectedIdSex, ageFieldValue, restHrFieldValue, maxHrFieldValue, selectedIdZone));
                     startActivity(intent);
+                    if(wantToCloseDialog)
+                        d.dismiss();
+                    //else dialog stays open. Make sure you have an obvious way to close the dialog especially if you set cancellable to false.
                 }
-                if(wantToCloseDialog)
-                    d.dismiss();
-                //else dialog stays open. Make sure you have an obvious way to close the dialog especially if you set cancellable to false.
             });
         }
+    }
+
+    private int calculateMaxHrFieldValue(int ageFieldValue) {
+        int maxHrFieldValue;
+        if(ageFieldValue == 0) {
+            maxHrFieldValue = (int) Math.round(209 - ageFieldValue * 0.7);
+        } else {
+            maxHrFieldValue = (int) Math.round(214 - ageFieldValue * 0.8);
+        }
+        return maxHrFieldValue;
+    }
+
+    private boolean isFormValid() {
+        return et_age.isValid() && et_rest_hr.isValid();
     }
 }
