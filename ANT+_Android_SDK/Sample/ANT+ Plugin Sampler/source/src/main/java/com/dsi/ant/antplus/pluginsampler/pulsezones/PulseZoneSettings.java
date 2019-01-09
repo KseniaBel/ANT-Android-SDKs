@@ -16,7 +16,7 @@ public class PulseZoneSettings implements Parcelable {
     private int maxHr;
     private int zone;
 
-    public PulseZoneSettings(int gender, int age, int restHr, int maxHr, int zone){
+    public PulseZoneSettings(int gender, int age, int restHr, int maxHr, int zone) {
         this.gender = gender;
         this.age = age;
         this.restHr = restHr;

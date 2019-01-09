@@ -23,9 +23,49 @@ import android.widget.Toast;
 
 public class Dialog_DataInput extends  DialogFragment {
 
+    enum Preferences {
+        USER_SEX_KEY("userSexKey"),
+        AGE_KEY("ageKey"),
+        REST_HR_KEY("restHrKey"),
+        MAX_HR_KEY("maxHrKey"),
+        PULSE_ZONE_KEY("pulseZoneKey");
+
+        private String prefName;
+
+        Preferences(String prefName) {
+            this.prefName = prefName;
+        }
+
+        @Override
+        public String toString() {
+            return prefName;
+        }
+
+        public static int getAge(SharedPreferences prefs) {
+            return prefs.getInt(Preferences.AGE_KEY.toString(), 0);
+        }
+
+        public static int getUserSex(SharedPreferences prefs) {
+            return prefs.getInt(Preferences.USER_SEX_KEY.toString(), R.id.radioButton_Female);
+        }
+
+        public static int getRestHr(SharedPreferences prefs) {
+            return prefs.getInt(Preferences.REST_HR_KEY.toString(), 0);
+        }
+
+        public static int getMaxHr(SharedPreferences prefs) {
+            return prefs.getInt(Preferences.MAX_HR_KEY.toString(), 0);
+        }
+
+        public static int getPulseZone(SharedPreferences prefs) {
+            return prefs.getInt(Preferences.PULSE_ZONE_KEY.toString(), R.id.radioButton_Zone1);
+        }
+    }
+
+    public static final String INTENT_PARAM_APP_PREFERENCES = "prefID";
     RadioGroup radioSexGroup;
-    ValidatableEditText et_age;
-    ValidatableEditText et_rest_hr;
+    NumericEditText et_age;
+    NumericEditText et_rest_hr;
     EditText et_max_hr;
     RadioGroup radioZones;
     SharedPreferences myPrefs;
@@ -40,7 +80,7 @@ public class Dialog_DataInput extends  DialogFragment {
                 .setPositiveButton("OK", (DialogInterface dialog, int which) -> {})
                 .setNegativeButton("Cancel", (dialog, which) -> {
                     //Let dialog dismiss
-                 });
+                });
 
         // Get the layout inflater
         LayoutInflater inflater = getActivity().getLayoutInflater();
@@ -65,15 +105,12 @@ public class Dialog_DataInput extends  DialogFragment {
 
 
         //Get shared preferences
-        myPrefs = detailsView.getContext().getSharedPreferences("prefID", Context.MODE_PRIVATE);
-        int userSex = myPrefs.getInt("userSexKey", R.id.radioButton_Female);
-        radioSexGroup.check(userSex);
-        int age = myPrefs.getInt("ageKey", 0);
-        et_age.setText((String.valueOf(age)));
-        int restHr = myPrefs.getInt("restHrKey",0);
-        et_rest_hr.setText((String.valueOf(restHr)));
-        int maxHr = myPrefs.getInt("maxHrKey",0);
-        et_max_hr.setText((String.valueOf(maxHr)));
+        myPrefs = detailsView.getContext().getSharedPreferences(INTENT_PARAM_APP_PREFERENCES, Context.MODE_PRIVATE);
+        radioSexGroup.check(Preferences.getUserSex(myPrefs));
+        et_age.setText(String.valueOf(Preferences.getAge(myPrefs)));
+        et_rest_hr.setText(String.valueOf(Preferences.getRestHr(myPrefs)));
+        et_max_hr.setText(String.valueOf(Preferences.getMaxHr(myPrefs)));
+        radioZones.check(Preferences.getPulseZone(myPrefs));
 
         return builder.create();
     }
@@ -86,7 +123,7 @@ public class Dialog_DataInput extends  DialogFragment {
             Button positiveButton = d.getButton(Dialog.BUTTON_POSITIVE);
             positiveButton.setOnClickListener(v -> {
                 if(isFormValid()) {
-                    Boolean wantToCloseDialog = false;
+                    Boolean wantToCloseDialog;
                     int ageFieldValue = Integer.parseInt(et_age.getText().toString());
                     int restHrFieldValue = Integer.parseInt(et_rest_hr.getText().toString());
                     int maxHrFieldValue;
@@ -96,12 +133,14 @@ public class Dialog_DataInput extends  DialogFragment {
                         maxHrFieldValue = Integer.parseInt(et_max_hr.getText().toString());
                     }
 
-                    myPrefs = getContext().getSharedPreferences("prefID", Context.MODE_PRIVATE);
+                    myPrefs = getContext().getSharedPreferences(INTENT_PARAM_APP_PREFERENCES, Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = myPrefs.edit();
-                    editor.putInt("userSexKey", radioSexGroup.getCheckedRadioButtonId());
-                    editor.putInt("ageKey", ageFieldValue);
-                    editor.putInt("restHrKey", restHrFieldValue);
-                    editor.putInt("maxHrKey", maxHrFieldValue);
+                    editor.putInt(Preferences.USER_SEX_KEY.toString(), radioSexGroup.getCheckedRadioButtonId());
+                    editor.putInt(Preferences.AGE_KEY.toString(), ageFieldValue);
+                    editor.putInt(Preferences.REST_HR_KEY.toString(), restHrFieldValue);
+                    editor.putInt(Preferences.MAX_HR_KEY.toString(), maxHrFieldValue);
+                    editor.putInt(Preferences.PULSE_ZONE_KEY.toString(), radioZones.getCheckedRadioButtonId());
+
 
                     editor.apply();
                     wantToCloseDialog = true;
@@ -110,7 +149,7 @@ public class Dialog_DataInput extends  DialogFragment {
                     startActivity(intent);
                     if(wantToCloseDialog)
                         d.dismiss();
-                    //else dialog stays open. Make sure you have an obvious way to close the dialog especially if you set cancellable to false.
+                    //else dialog stays open.
                 }
             });
         }

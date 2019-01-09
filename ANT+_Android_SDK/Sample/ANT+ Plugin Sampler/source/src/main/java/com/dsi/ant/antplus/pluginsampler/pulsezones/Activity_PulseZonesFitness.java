@@ -1,16 +1,12 @@
 package com.dsi.ant.antplus.pluginsampler.pulsezones;
 
 import android.app.Activity;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.widget.Chronometer;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.dsi.ant.antplus.pluginsampler.R;
 import com.dsi.ant.antplus.pluginsampler.multidevicesearch.Activity_MultiDeviceSearchSampler;
@@ -42,17 +38,10 @@ public class Activity_PulseZonesFitness extends Activity {
     GraphView graph;
     long startTimeInMillisec;
     LineGraphSeries<DataPoint> series;
-    Bundle bundle;
 
-    int gender;
-    int age;
-    int restHr;
-    int maxHr;
-    int zone;
-    int lowPulseLimit;
-    int highPulseLimit;
-    SQLiteDatabase database;
+    PulseZoneUtils utility;
 
+    HRRecordsRepository repository;
     private CustomChronometer chronometer;
 
     @Override
@@ -63,7 +52,7 @@ public class Activity_PulseZonesFitness extends Activity {
         tv_status = findViewById(R.id.textView_ZoneStatus);
         tv_heartRate = findViewById(R.id.textView_HeartRatePulseZone);
         chronometer = findViewById(R.id.chronometer);
-        tv_status.setText("Connecting...");
+        tv_status.setText(R.string.connection_string);
 
         graph = findViewById(R.id.graph);
         series = new LineGraphSeries<>();
@@ -78,54 +67,14 @@ public class Activity_PulseZonesFitness extends Activity {
         series.setDataPointsRadius(10);
         series.setThickness(8);
 
-        settingsInit();
-        calculateZonePulse(restHr, maxHr, zone);
+        Intent intent = getIntent();
+        utility = new PulseZoneUtils(intent);
+        utility.calculateZonePulse();
 
-        //Create database
-        database =  new FitnessSQLiteDBHelper(this).getWritableDatabase();
-
+        repository = new HRRecordsRepository(this);
         handleReset();
     }
 
-    /**
-     * Initializes all the setting fields
-     */
-    private void settingsInit() {
-        bundle = getIntent().getExtras();
-        PulseZoneSettings settings = bundle.getParcelable("settings");
-
-        gender = settings.getGender();
-        age = settings.getAge();
-        restHr = settings.getrestHr();
-        maxHr = settings.getMaxHr();
-        zone = settings.getZone();
-    }
-
-    /**
-     * Calculates the low and high limit of particular pulse zone
-     * @param restHr - resting pulse value
-     * @param maxHr - maximum pulse value
-     * @param zone - chosen zone
-     */
-    private void calculateZonePulse(int restHr, int maxHr, int zone) {
-        int hrReserve = maxHr - restHr;
-        if(zone == 1) {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.4);
-            highPulseLimit = (int)Math.round(restHr + hrReserve*0.51);
-        } else if(zone == 2) {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.52);
-            highPulseLimit = (int)Math.round(restHr + hrReserve*0.63);
-        } else if(zone == 3) {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.64);
-            highPulseLimit = (int)Math.round(restHr + hrReserve*0.75);
-        } else if(zone == 4) {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.76);
-            highPulseLimit = (int)Math.round(restHr + hrReserve*0.87);
-        } else {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.99);
-            highPulseLimit = maxHr;
-        }
-    }
 
     /**
      * Resets the PCC connection to request access again and clears any existing display data.
@@ -147,7 +96,7 @@ public class Activity_PulseZonesFitness extends Activity {
             final String textHeartRate = String.valueOf(computedHeartRate);
 
             //Set vibration
-            if(computedHeartRate > highPulseLimit || computedHeartRate < lowPulseLimit) {
+            if(computedHeartRate > utility.getHighPulseLimit() || computedHeartRate < utility.getLowPulseLimit()) {
                 // Get instance of Vibrator from current Context
                 Vibrator mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
@@ -165,48 +114,44 @@ public class Activity_PulseZonesFitness extends Activity {
                 int realTime = (int)(System.currentTimeMillis() - startTimeInMillisec)/1000;
                 series.appendData(new DataPoint(realTime, computedHeartRate), true, 1000);
 
-                //Insert values into database
-                ContentValues values = new ContentValues();
-                values.put(FitnessSQLiteDBHelper.RECORDS_COLUMN_HR, computedHeartRate);
-                values.put(FitnessSQLiteDBHelper.RECORDS_TIMESTAMP, realTime);
-                long newRowId = database.insert(FitnessSQLiteDBHelper.RECORDS_TABLE_NAME, null, values);
-                logger.info("The new row id is " + newRowId);
+                repository.addNewRecord(computedHeartRate);
 
                 tv_heartRate.setText(textHeartRate);
             });
         });
     }
 
+
     //Handle the result, connecting to events on success or reporting failure to user.
     protected IPluginAccessResultReceiver<AntPlusHeartRatePcc> base_IPluginAccessResultReceiver =
             (result, resultCode, initialDeviceState) -> {
-                tv_status.setText("Connecting...");
+                tv_status.setText(R.string.connection_string);
                 switch(resultCode) {
                     case SUCCESS:
                         hrPcc = result;
-                        tv_status.setText("Pulse range: " + lowPulseLimit + "-" + highPulseLimit);
+                        tv_status.setText("Pulse range: " + utility.getLowPulseLimit() + "-" + utility.getHighPulseLimit());
                         subscribeToHrEvents();
                         break;
                     case CHANNEL_NOT_AVAILABLE:
-                        tv_status.setText("Error");
+                        tv_status.setText(R.string.error_string);
                         break;
                     case ADAPTER_NOT_DETECTED:
-                        tv_status.setText("Error");
+                        tv_status.setText(R.string.error_string);
                         break;
                     case BAD_PARAMS:
-                        tv_status.setText("Error");
+                        tv_status.setText(R.string.error_string);
                         break;
                     case OTHER_FAILURE:
-                        tv_status.setText("Error");
+                        tv_status.setText(R.string.error_string);
                         break;
                     case DEPENDENCY_NOT_INSTALLED:
-                        tv_status.setText("Error");
+                        tv_status.setText(R.string.error_string);
                         break;
                     case USER_CANCELLED:
-                        tv_status.setText("Cancelled");
+                        tv_status.setText(R.string.error_string);
                         break;
                     case UNRECOGNIZED:
-                        tv_status.setText("Error");
+                        tv_status.setText(R.string.error_string);
                         break;
                     default:
                         break;
@@ -236,7 +181,7 @@ public class Activity_PulseZonesFitness extends Activity {
     @Override
     protected void onDestroy() {
         chronometer.stop();
-        database.close();
+        repository.closeDb();
         releaseHandle.close();
         super.onDestroy();
     }

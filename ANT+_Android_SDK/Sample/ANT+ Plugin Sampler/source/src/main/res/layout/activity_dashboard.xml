@@ -12,7 +12,7 @@ All rights reserved.
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
-    <ListView android:layout_height="wrap_content"
+    <ListView android:layout_height="0dp"
         android:id="@android:id/list"
         android:layout_width="fill_parent" 
         android:layout_weight="1.0"/>
@@ -21,18 +21,18 @@ All rights reserved.
         android:id="@+id/textView_PluginSamplerVersion"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Sampler Version:" />
+        android:text="@string/sampler_version_text_view" />
 
     <TextView
         android:id="@+id/textView_PluginLibVersion"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Built w/ PluginLib:" />
+        android:text="@string/built_pluginlib_text_view" />
 
     <TextView
         android:id="@+id/textView_PluginsPkgVersion"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Installed Plugin Version:" />
+        android:text="@string/installed_plugin_version_text_view" />
 
 </LinearLayout>
