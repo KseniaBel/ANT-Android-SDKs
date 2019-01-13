@@ -1,6 +1,7 @@
 package com.dsi.ant.antplus.pluginsampler.pulsezones;
 
 import android.content.Context;
+import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.widget.Chronometer;
 
@@ -10,31 +11,77 @@ import android.widget.Chronometer;
 
 public class CustomChronometer extends Chronometer {
     private boolean isRunning = false;
+    private int totalElapsedTime;
+    private long lastStopTime = 0;
 
+    /**
+     * Initialization of CustomChronometer
+     * @param context - context
+     */
     public CustomChronometer(Context context) {
         super(context);
+
     }
 
+    /**
+     * Initialization of CustomChronometer
+     * @param context - context
+     * @param attrs - attributes
+     */
     public CustomChronometer(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
+    /**
+     * Initialization of CustomChronometer
+     * @param context - context
+     * @param attrs - attributes
+     * @param defStyle - style
+     */
     public CustomChronometer(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
     }
 
+    /**
+     * Starts chronometer from 00:00 or restart after pause from the last stop time
+     */
     @Override
     public void start() {
-        super.start();
         isRunning = true;
+        super.start();
+        //on start
+        if (lastStopTime == 0) {
+            setBase(SystemClock.elapsedRealtime());
+            // on resume after pause
+        } else {
+            long intervalOnPause = (SystemClock.elapsedRealtime() - lastStopTime);
+            setBase(getBase() + intervalOnPause);
+        }
     }
 
+    /**
+     * Stops chronometer and memories the stop time
+     */
     @Override
     public void stop() {
-        super.stop();
         isRunning = false;
+        super.stop();
+        lastStopTime = SystemClock.elapsedRealtime();
     }
 
+    /**
+     * Returns total elapsed time of the current workout
+     * @return total elapsed time in seconds
+     */
+    public int getElapsedTime() {
+        totalElapsedTime = (int)(totalElapsedTime + SystemClock.elapsedRealtime() - getBase())/1000;
+        return totalElapsedTime;
+    }
+
+    /**
+     * Returns if chronometer is running or not
+     * @return - true, if running and false, if not
+     */
     public boolean isRunning() {
         return isRunning;
     }

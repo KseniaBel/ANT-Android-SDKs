@@ -77,11 +77,36 @@ All rights reserved.
                 android:padding="10dp"
                 android:textAlignment="center" />
 
-            <com.jjoe64.graphview.GraphView
+            <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/graph"
                 android:layout_width="match_parent"
                 android:layout_height="200dip" />
 
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="214dp"
+                android:layout_gravity="fill_vertical"
+                android:paddingBottom="3dp"
+                android:paddingTop="3dp">
+
+                <ImageButton
+                    android:id="@+id/button_pause"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentTop="true"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="11dp"
+                    android:background="@drawable/pause_button2" />
+
+                <ImageButton
+                    android:id="@+id/button_stop"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentBottom="true"
+                    android:layout_centerHorizontal="true"
+                    android:background="@drawable/stop_button2" />
+
+            </RelativeLayout>
 
          </LinearLayout>
 

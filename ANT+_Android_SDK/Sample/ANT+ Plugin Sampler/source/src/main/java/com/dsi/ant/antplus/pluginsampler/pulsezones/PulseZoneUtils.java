@@ -1,40 +1,18 @@
 package com.dsi.ant.antplus.pluginsampler.pulsezones;
 
-import android.os.Bundle;
-import android.content.Intent;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by ksenia on 09.01.19.
  */
 
 public class PulseZoneUtils {
-    private int gender;
-    private int age;
-    private int restHr;
-    private int maxHr;
-    private int zone;
-    private int lowPulseLimit;
-    private int highPulseLimit;
-
-    /**
-     * Initializes all the setting fields
-     */
-    public PulseZoneUtils(Intent intent) {
-        Bundle bundle = intent.getExtras();
-        PulseZoneSettings settings = bundle.getParcelable("settings");
-
-        gender = settings.getGender();
-        age = settings.getAge();
-        restHr = settings.getrestHr();
-        maxHr = settings.getMaxHr();
-        zone = settings.getZone();
-    }
-
     /**
      * Calculates the low and high limit of particular pulse zone
      */
-    public void calculateZonePulse() {
+    public static PulseLimits calculateZonePulse(int restHr, int maxHr, int zone) {
         int hrReserve = maxHr - restHr;
+        int lowPulseLimit, highPulseLimit;
         if(zone == 1) {
             lowPulseLimit = (int)Math.round(restHr + hrReserve*0.4);
             highPulseLimit = (int)Math.round(restHr + hrReserve*0.51);
@@ -48,16 +26,55 @@ public class PulseZoneUtils {
             lowPulseLimit = (int)Math.round(restHr + hrReserve*0.76);
             highPulseLimit = (int)Math.round(restHr + hrReserve*0.87);
         } else {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.99);
+            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.88);
             highPulseLimit = maxHr;
         }
+        return new PulseLimits(lowPulseLimit, highPulseLimit);
     }
 
-    public int getLowPulseLimit() {
-        return lowPulseLimit;
+    /**
+     * Calculates maximum heart rate value based on age and gender
+     * @param ageFieldValue - age value
+     * @param isFemale - gender value
+     * @return
+     */
+    public static int calculateMaxHrFieldValue(int ageFieldValue, boolean isFemale) {
+        int maxHrFieldValue;
+        if(isFemale) {
+            maxHrFieldValue = (int) Math.round(209 - ageFieldValue * 0.7);
+        } else {
+            maxHrFieldValue = (int) Math.round(214 - ageFieldValue * 0.8);
+        }
+        return maxHrFieldValue;
     }
 
-    public int getHighPulseLimit() {
-        return highPulseLimit;
+    /**
+     * Calculates upper limit for axis maximum
+     * @param highPulseLimit - maximum pulse
+     * @return
+     */
+    public static float calculateUpperRangeLimit(int highPulseLimit) {
+        return highPulseLimit + highPulseLimit*0.1f;
+    }
+
+    /**
+     * Calculates lower limit for axis minimum
+     * @param lowPulseLimit - rest pulse
+     * @return
+     */
+    public static float calculateLowerRangeLimit(int lowPulseLimit) {
+        return lowPulseLimit - lowPulseLimit*0.1f;
+    }
+
+    /**
+     * Converts time from milliseconds to String in format hh:mm:ss
+     * @param miliSeconds - time in milliseconds
+     * @return
+     */
+    public static String fromMillisecondsToTime(long miliSeconds) {
+        int hrs = (int) TimeUnit.MILLISECONDS.toHours(miliSeconds) % 24;
+        int min = (int) TimeUnit.MILLISECONDS.toMinutes(miliSeconds) % 60;
+        int sec = (int) TimeUnit.MILLISECONDS.toSeconds(miliSeconds) % 60;
+        return String.format("%02d:%02d:%02d", hrs, min, sec);
     }
 }

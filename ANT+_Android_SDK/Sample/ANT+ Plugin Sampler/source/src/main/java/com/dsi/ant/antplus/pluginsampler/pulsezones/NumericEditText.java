@@ -19,22 +19,62 @@ import java.util.function.Function;
 public class NumericEditText extends EditText {
     private int minValueAttr;
     private int maxValueAttr;
-
     private boolean isValid;
 
-    public boolean isValid() {
-        return isValid;
-    }
-
+    /**
+     * Initialization of NumericEditText
+     * @param context - context
+     */
     public NumericEditText(Context context) {
         super(context);
     }
 
+    /**
+     * Initialization of NumericEditText
+     * @param context - context
+     * @param attrs - attributes
+     */
     public NumericEditText(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context, attrs);
     }
 
+    /**
+     * Initialization of NumericEditText
+     * @param context - context
+     * @param attrs - attributes
+     * @param defStyleAttr - style
+     */
+    public NumericEditText(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+        init(context, attrs);
+    }
+
+    /**
+     * Initialization of NumericEditText
+     * @param context - context
+     * @param attrs - attributes
+     * @param defStyleAttr - style
+     * @param defStyleRes - style
+     */
+    public NumericEditText(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+        init(context, attrs);
+    }
+
+    /**
+     * Returns isValid attribute
+     * @return - true or false
+     */
+    public boolean isValid() {
+        return isValid;
+    }
+
+    /**
+     * Initialization of NumericEditText fields
+     * @param context - context
+     * @param attrs - attributes
+     */
     private void init(Context context, AttributeSet attrs) {
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.NumericEditText);
         minValueAttr = a.getInt(R.styleable.NumericEditText_min_value, 1);
@@ -61,15 +101,4 @@ public class NumericEditText extends EditText {
             }
         });
     }
-
-    public NumericEditText(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        init(context, attrs);
-    }
-
-    public NumericEditText(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
-        init(context, attrs);
-    }
-
 }

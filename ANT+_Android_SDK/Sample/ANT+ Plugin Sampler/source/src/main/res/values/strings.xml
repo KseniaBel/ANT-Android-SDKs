@@ -71,5 +71,14 @@ All rights reserved.
     <string name="connection_string">Connecting...</string>
     <string name="error_string">Error</string>
 
+    //Activity workout statistics
+    <string name="workout_finished_text_view">Workout finished</string>
+    <string name="time_of_workout_text_view">Time of workout:</string>
+    <string name="time_workout_value">00:00:00</string>
+    <string name="average_heart_rate_text">Average heart rate:</string>
+    <string name="average_heart_rate_value">0 bpm</string>
+    <string name="maximum_heart_rate_text">Maximum heart rate</string>
+    <string name="max_heart_rate_value">0 bpm</string>
+
 
 </resources>
