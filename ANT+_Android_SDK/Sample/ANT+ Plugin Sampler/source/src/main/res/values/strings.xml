@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE AndroidXML>
 <!--
 This software is subject to the license described in the License.txt file
 included with this software distribution. You may not use this file except in compliance
@@ -35,8 +34,51 @@ All rights reserved.
     <string name="label_selectAll">Select All</string>
     <string name="label_deviceTypeFilter">Select Device Types to Search:</string>
     <string name="label_RSSI">RSSI: </string>
-    <string name="_restHr">0</string>
-    <string name="_maxHr">0</string>
-    <string name="_age">0</string>
+
+    //Dialog pulse zone settings
+    <string name="input_data_text_view">Input data:</string>
+    <string name="gender_text_view">Gender:</string>
+    <string name="female_radio_button">Female</string>
+    <string name="male_radio_button">Male</string>
+    <string name="age_text_view">Age:</string>
+    <string name="age_hint">0</string>
+    <string name="restHr_text_view">Resting Heart Rate:</string>
+    <string name="restHr_hint">0</string>
+    <string name="maxHr_text_view">Max Heart Rate\n(If unknown, calculated automatically):</string>
+    <string name="maxHr_hint">0</string>
+    <string name="choose_hr_zone">Choose HR Zone:</string>
+    <string name="zone1_radio_button">Zone 1: Healthy Heart(40–52%)</string>
+    <string name="zone2_radio_button">Zone 2: Easy(52–64%)</string>
+    <string name="zone3_radio_button">Zone 3: Aerobic(64–76%)</string>
+    <string name="zone4_radio_button">Zone 4: Anaerobic Threshold(76–88%)</string>
+    <string name="zone5_radio_button">Zone 5: VO2 Maximum(88–100%)</string>
+
+    //Dashboard activity
+    <string name="sampler_version_text_view">Sampler Version:</string>
+    <string name="built_pluginlib_text_view">Built w/ PluginLib:</string>
+    <string name="installed_plugin_version_text_view">Installed Plugin Version:</string>
+
+    //Pulse zone fitness activity
+    <string name="status_text_view">[status]</string>
+    <string name="heart_rate_text_view">Heart Rate:</string>
+    <string name="heart_rate_value_text_view">---</string>
+    <string name="pause_button">Pause</string>
+    <string name="stop_button">Stop</string>
+
+    //Dialog progress waiter
+    <string name="search_device_text_view">Searching for device(s)...</string>
+
+    <string name="connection_string">Connecting...</string>
+    <string name="error_string">Error</string>
+
+    //Activity workout statistics
+    <string name="workout_finished_text_view">Workout finished</string>
+    <string name="time_of_workout_text_view">Time of workout:</string>
+    <string name="time_workout_value">00:00:00</string>
+    <string name="average_heart_rate_text">Average heart rate:</string>
+    <string name="average_heart_rate_value">0 bpm</string>
+    <string name="maximum_heart_rate_text">Maximum heart rate</string>
+    <string name="max_heart_rate_value">0 bpm</string>
+
 
 </resources>

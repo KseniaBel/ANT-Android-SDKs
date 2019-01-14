@@ -6,6 +6,9 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.support.annotation.NonNull;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.dsi.ant.antplus.pluginsampler.R;
@@ -16,10 +19,23 @@ import com.dsi.ant.plugins.antplus.pccbase.AntPluginPcc.IDeviceStateChangeReceiv
 import com.dsi.ant.plugins.antplus.pccbase.AntPluginPcc.IPluginAccessResultReceiver;
 import com.dsi.ant.plugins.antplus.pccbase.MultiDeviceSearch;
 import com.dsi.ant.plugins.antplus.pccbase.PccReleaseHandle;
-import com.jjoe64.graphview.GraphView;
-import com.jjoe64.graphview.series.DataPoint;
-import com.jjoe64.graphview.series.LineGraphSeries;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.LimitLine;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+import com.github.mikephil.charting.utils.ColorTemplate;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,97 +44,192 @@ import java.util.logging.Logger;
  */
 
 public class Activity_PulseZonesFitness extends Activity {
-    AntPlusHeartRatePcc hrPcc = null;
-    PccReleaseHandle<AntPlusHeartRatePcc> releaseHandle = null;
-    Logger logger = Logger.getLogger(this.getClass().getName());
+    private AntPlusHeartRatePcc hrPcc = null;
+    private PccReleaseHandle<AntPlusHeartRatePcc> releaseHandle = null;
+    private Logger logger = Logger.getLogger(this.getClass().getName());
 
-    TextView tv_status;
-    TextView tv_heartRate;
-    TextView tv_time;
+    private TextView tv_status;
+    private TextView tv_heartRate;
+    private ImageButton btn_pauseResume;
+    private ImageButton btn_stop;
 
-    GraphView graph;
-    long startTimeInMillisec;
-    LineGraphSeries<DataPoint> series;
-    Bundle bundle;
+    private List<Integer> readingsBuffer;
+    private ScheduledExecutorService service;
+    private LineChart graph;
 
-    int gender;
-    int age;
-    int restHr;
-    int maxHr;
-    int zone;
-    int lowPulseLimit;
-    int highPulseLimit;
+    private HRRecordsRepository repository;
+    private PulseZoneSettings pulseSettings;
+    private CustomChronometer chronometer;
+    private PulseLimits pulseLimits;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pulse_zone_fitness);
 
+        pulseSettings = new PulseZoneSettings(this.getApplicationContext());
+        logger.info("Restore setting: " + pulseSettings.toString());
+        pulseLimits = PulseZoneUtils.calculateZonePulse(pulseSettings.getRestHr(), pulseSettings.getMaxHr(), pulseSettings.getZoneId());
+        logger.info("low: " + pulseLimits.getLowPulseLimit() + " high: " + pulseLimits.getHighPulseLimit());
+        readingsBuffer = Collections.synchronizedList(new ArrayList<>());
+
         tv_status = findViewById(R.id.textView_ZoneStatus);
         tv_heartRate = findViewById(R.id.textView_HeartRatePulseZone);
-        tv_time = findViewById(R.id.textView_TimePulseZone);
-        tv_status.setText("Connecting...");
-
+        chronometer = findViewById(R.id.chronometer);
+        tv_status.setText(R.string.connection_string);
+        btn_pauseResume = findViewById(R.id.button_pause);
+        btn_stop = findViewById(R.id.button_stop);
+        btn_stop.setVisibility(View.GONE);
         graph = findViewById(R.id.graph);
-        series = new LineGraphSeries<>();
-        graph.addSeries(series);
-        graph.getViewport().setXAxisBoundsManual(true);
-        graph.getViewport().setMaxX(30);
-        series.setColor(Color.GREEN);
-        series.setDrawDataPoints(true);
-        series.setDataPointsRadius(10);
-        series.setThickness(8);
+        setupChart();
+        setLegend();
+        setupAxes();
+        setupData();
 
-        settingsInit();
-        calculateZonePulse(restHr, maxHr, zone);
-
+        repository = new HRRecordsRepository(this);
         handleReset();
-    }
 
-    /**
-     * Initializes all the setting fields
-     */
-    private void settingsInit() {
-        bundle = getIntent().getExtras();
-        PulseZoneSettings settings = bundle.getParcelable("settings");
-
-        gender = settings.getGender();
-        age = settings.getAge();
-        restHr = settings.getrestHr();
-        maxHr = settings.getMaxHr();
-        if(maxHr == 0) {
-            if(gender == 0) {
-                maxHr = (int) Math.round(209 - age * 0.7);
-            } else {
-                maxHr = (int) Math.round(214 - age * 0.8);
+        btn_pauseResume.setOnClickListener(view -> {
+            if (chronometer.isRunning()) {
+                unsubscribeToHrEvents();
+                btn_pauseResume.setImageResource(R.drawable.play_button2);
+                btn_stop.setVisibility(View.VISIBLE);
+            }else{
+                subscribeToHrEvents();
+                btn_pauseResume.setImageResource(R.drawable.pause_button2);
+                btn_stop.setVisibility(View.GONE);
             }
-        }
-        zone = settings.getZone();
+        });
+
+        btn_stop.setOnClickListener(view -> {
+            unsubscribeToHrEvents();
+            Intent intent = new Intent(this, Activity_WorkoutStatistics.class);
+            int maxWorkoutHr = repository.getMaxHeartRate();
+            int averageHr = repository.getAverageHeartRate();
+            long workoutTime = repository.getWorkoutTime();
+            intent.putExtra("statistics", new WorkoutStatistics(maxWorkoutHr, averageHr, workoutTime));
+            startActivity(intent);
+            finish();
+        });
+    }
+
+    //Creates and displays graph
+    private void setupChart() {
+        // disable description text
+        graph.getDescription().setEnabled(false);
+        // enable touch gestures
+        graph.setTouchEnabled(true);
+        // if disabled, scaling can be done on x- and y-axis separately
+        graph.setPinchZoom(true);
+        // enable scaling
+        graph.setScaleEnabled(true);
+        graph.setDrawGridBackground(false);
+        // set an alternative background color
+        graph.setBackgroundColor(Color.DKGRAY);
+    }
+
+    private void setupAxes() {
+        XAxis xl = graph.getXAxis();
+        xl.setTextColor(Color.WHITE);
+        xl.setDrawGridLines(false);
+        xl.setAvoidFirstLastClipping(true);
+        xl.setEnabled(true);
+
+        YAxis leftAxis = graph.getAxisLeft();
+        leftAxis.setTextColor(Color.WHITE);
+        leftAxis.setAxisMaximum(PulseZoneUtils.calculateUpperRangeLimit(pulseLimits.getHighPulseLimit()));
+        leftAxis.setAxisMinimum(PulseZoneUtils.calculateLowerRangeLimit(pulseLimits.getLowPulseLimit()));
+        leftAxis.setDrawGridLines(true);
+
+        YAxis rightAxis = graph.getAxisRight();
+        rightAxis.setEnabled(false);
+
+        // Add a limit line
+        LimitLine upperLimitLine = getLimitLine(pulseLimits.getHighPulseLimit(), "Upper limit");
+        LimitLine lowerLimitLine = getLimitLine(pulseLimits.getLowPulseLimit(), "Lower limit");
+        // reset all limit lines to avoid overlapping lines
+        leftAxis.removeAllLimitLines();
+        leftAxis.addLimitLine(upperLimitLine);
+        leftAxis.addLimitLine(lowerLimitLine);
+        // limit lines are drawn behind data (and not on top)
+        leftAxis.setDrawLimitLinesBehindData(true);
+    }
+
+    @NonNull
+    private LimitLine getLimitLine(int limit, String label) {
+        LimitLine ll = new LimitLine(limit, label);
+        ll.setLineWidth(2f);
+        ll.setLabelPosition(LimitLine.LimitLabelPosition.RIGHT_TOP);
+        ll.setTextSize(10f);
+        ll.setTextColor(Color.WHITE);
+        return ll;
+    }
+
+    private void setupData() {
+        LineData data = new LineData();
+        data.setValueTextColor(Color.WHITE);
+        // add empty data
+        graph.setData(data);
+    }
+
+    private void setLegend() {
+        // get the legend (only possible after setting data)
+        Legend l = graph.getLegend();
+
+        // modify the legend ...
+        l.setForm(Legend.LegendForm.CIRCLE);
+        l.setTextColor(Color.WHITE);
+    }
+
+    private LineDataSet createSet() {
+        LineDataSet set = new LineDataSet(null, "Heart rate data");
+        set.setAxisDependency(YAxis.AxisDependency.LEFT);
+        set.setColors(ColorTemplate.VORDIPLOM_COLORS[0]);
+        set.setCircleColor(Color.WHITE);
+        set.setLineWidth(2f);
+        set.setCircleRadius(4f);
+        return set;
     }
 
     /**
-     * Calculates the low and high limit of particular pulse zone
-     * @param restHr - resting pulse value
-     * @param maxHr - maximum pulse value
-     * @param zone - chosen zone
+     * Adds an entry of heart rate to the graph
+     * @param time - the time of the reading
+     * @param hrValue - the heart rate value
      */
-    private void calculateZonePulse(int restHr, int maxHr, int zone) {
-        int hrReserve = maxHr - restHr;
-        if(zone == 1) {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.4);
-            highPulseLimit = (int)Math.round(restHr + hrReserve*0.51);
-        } else if(zone == 2) {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.52);
-            highPulseLimit = (int)Math.round(restHr + hrReserve*0.63);
-        } else if(zone == 3) {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.64);
-            highPulseLimit = (int)Math.round(restHr + hrReserve*0.75);
-        } else if(zone == 4) {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.76);
-            highPulseLimit = (int)Math.round(restHr + hrReserve*0.87);
-        } else {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.99);
-            highPulseLimit = maxHr;
+    private void addEntry(int time, int hrValue) {
+        logger.info("Add entry: time: " + time + " heart Reat: " + hrValue);
+        LineData data = graph.getData();
+
+        if (data != null) {
+            ILineDataSet set = data.getDataSetByIndex(0);
+
+            if (set == null) {
+                set = createSet();
+                data.addDataSet(set);
+            }
+            YAxis leftAxis = graph.getAxisLeft();
+
+            //increase axis maximum heart rate by 5 in case heart rate value is bigger than current maximum or
+            //Decrease axis minimum heart rate by 5 in case heart rate value is smaller than current minimum
+            if(hrValue > leftAxis.getAxisMaximum()) {
+                leftAxis.setAxisMaximum(hrValue + 5);
+            } else if(hrValue < leftAxis.getAxisMinimum()) {
+                leftAxis.setAxisMinimum(hrValue - 5);
+            }
+            leftAxis.setDrawGridLines(true);
+
+            data.addEntry(new Entry(time, hrValue), 0);
+
+            // let the chart know it's data has changed
+            data.notifyDataChanged();
+            graph.notifyDataSetChanged();
+
+            // limit the number of visible entries
+            graph.setVisibleXRangeMaximum(20);
+
+            // move to the latest entry
+            graph.moveViewToX(data.getEntryCount());
         }
     }
 
@@ -134,69 +245,103 @@ public class Activity_PulseZonesFitness extends Activity {
     }
 
     /**
-     * Switches the active view to the data display and subscribes to all the data events
+     * Switches the active view to the data display and subscribes to all the data events.
+     * Starts chronometer
+     * Contains two threads: one is adding heart rate reading from the pulsometer to the shared readingsBuffer, another displays the average of readings from the readingsBuffer every 1 second
      */
-    public void subscribeToHrEvents() {
-        startTimeInMillisec = System.currentTimeMillis();
+    protected void subscribeToHrEvents() {
+        chronometer.start();
         hrPcc.subscribeHeartRateDataEvent((estTimestamp, eventFlags, computedHeartRate, heartBeatCount, heartBeatEventTime, dataState) -> {
-            // Mark heart rate with asterisk if zero detected
-            final String textHeartRate = String.valueOf(computedHeartRate);
+            logger.info(String.format("estTimestamp:%1$s eventFlags:%2$s computedHeartRate:%3$s heartBeatCount:%4$s heartBeatEventTime:%5$s dataState:%6$s", estTimestamp, eventFlags, computedHeartRate, heartBeatCount, heartBeatEventTime, dataState));
+            readingsBuffer.add(computedHeartRate);
+        });
+        service = Executors.newSingleThreadScheduledExecutor();
+        service.scheduleAtFixedRate(() -> displayReading(), 1, 1, TimeUnit.SECONDS);
+    }
 
-            if(computedHeartRate > highPulseLimit || computedHeartRate < lowPulseLimit) {
-                // Get instance of Vibrator from current Context
-                Vibrator mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+    /**
+     * Stop all the threads and chronometer
+     */
+    protected void unsubscribeToHrEvents() {
+        List<Runnable> list = service.shutdownNow();
+        logger.fine("Scheduled events are skiped: " + list.size());
+        chronometer.stop();
+        hrPcc.subscribeHeartRateDataEvent((estTimestamp, eventFlags, computedHeartRate, heartBeatCount, heartBeatEventTime, dataState) -> {});
+    }
 
-                // Vibrate for 75 milliseconds
-                mVibrator.vibrate(75);
+    /**
+     * Computes the average of heart rate and runs the UI thread, that displays info and adds new record in DB
+     */
+    private void displayReading() {
+        int computedHeartRate;
+        int sum = 0;
+        //calculate the average of the readings from shared readingBuffer in synchronized way
+        synchronized (readingsBuffer) {
+            for(Integer i : readingsBuffer) {
+                sum += i;
             }
+            computedHeartRate = Math.round(sum/readingsBuffer.size());
+        }
+        // Mark heart rate with asterisk if zero detected
+        final String textHeartRate = String.valueOf(computedHeartRate);
 
-            runOnUiThread(() -> {
-                int realTime = (int)(System.currentTimeMillis() - startTimeInMillisec)/1000;
-                series.appendData(new DataPoint(realTime, computedHeartRate), true, 1000);
-
+        runOnUiThread(() -> {
+                addEntry(chronometer.getElapsedTime(), computedHeartRate);
+                repository.addNewRecord(computedHeartRate);
                 tv_heartRate.setText(textHeartRate);
-                tv_time.setText(Long.toString(estTimestamp));
-            });
+
+                //Set vibration
+                if(computedHeartRate > pulseLimits.getHighPulseLimit() || computedHeartRate < pulseLimits.getLowPulseLimit()) {
+                    // Get instance of Vibrator from current Context
+                    Vibrator mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
+                    // Vibrate for 75 milliseconds
+                    mVibrator.vibrate(75);
+                }
         });
     }
 
-    //Handle the result, connecting to events on success or reporting failure to user.
+    /**
+     * Handle the result, connecting to events on success or reporting failure to user.
+     */
     protected IPluginAccessResultReceiver<AntPlusHeartRatePcc> base_IPluginAccessResultReceiver =
             (result, resultCode, initialDeviceState) -> {
-                tv_status.setText("Connecting...");
+                tv_status.setText(R.string.connection_string);
                 switch(resultCode) {
                     case SUCCESS:
                         hrPcc = result;
-                        tv_status.setText("Pulse range: " + lowPulseLimit + "-" + highPulseLimit);
+                        tv_status.setText("Pulse range: " + pulseLimits.getLowPulseLimit() + "-" + pulseLimits.getHighPulseLimit());
                         subscribeToHrEvents();
                         break;
                     case CHANNEL_NOT_AVAILABLE:
-                        tv_status.setText("Error");
+                        tv_status.setText(R.string.error_string);
                         break;
                     case ADAPTER_NOT_DETECTED:
-                        tv_status.setText("Error");
+                        tv_status.setText(R.string.error_string);
                         break;
                     case BAD_PARAMS:
-                        tv_status.setText("Error");
+                        tv_status.setText(R.string.error_string);
                         break;
                     case OTHER_FAILURE:
-                        tv_status.setText("Error");
+                        tv_status.setText(R.string.error_string);
                         break;
                     case DEPENDENCY_NOT_INSTALLED:
-                        tv_status.setText("Error");
+                        tv_status.setText(R.string.error_string);
                         break;
                     case USER_CANCELLED:
-                        tv_status.setText("Cancelled");
+                        tv_status.setText(R.string.error_string);
                         break;
                     case UNRECOGNIZED:
-                        tv_status.setText("Error");
+                        tv_status.setText(R.string.error_string);
                         break;
                     default:
                         break;
                 }
             };
 
-    //Receives state changes and shows it on the status display line
+    /**
+     * Receives state changes and shows it on the status display line
+     */
     protected  IDeviceStateChangeReceiver base_IDeviceStateChangeReceiver =
             (DeviceState newDeviceState) ->
                     runOnUiThread(() -> logger.log(Level.INFO, hrPcc.getDeviceName() + ": " + newDeviceState));
@@ -216,8 +361,16 @@ public class Activity_PulseZonesFitness extends Activity {
         }
     }
 
+    /**
+     * Actions on Destroying the activity
+     */
     @Override
     protected void onDestroy() {
+        List<Runnable> list = service.shutdownNow();
+        logger.fine("Scheduled events are skiped: " + list.size());
+        chronometer.stop();
+        repository.closeDb();
+        this.deleteDatabase("fitness_activity_database");
         releaseHandle.close();
         super.onDestroy();
     }
