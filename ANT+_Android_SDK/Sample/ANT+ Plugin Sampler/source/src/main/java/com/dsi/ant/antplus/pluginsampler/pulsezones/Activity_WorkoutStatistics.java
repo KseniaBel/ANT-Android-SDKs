@@ -1,7 +1,10 @@
 package com.dsi.ant.antplus.pluginsampler.pulsezones;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -17,6 +20,8 @@ public class Activity_WorkoutStatistics extends Activity {
     private TextView tv_maxWorkoutHr;
     private ImageButton btn_back;
 
+    private HRRecordsRepository repository;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,13 +32,14 @@ public class Activity_WorkoutStatistics extends Activity {
         tv_maxWorkoutHr = findViewById(R.id.textView_maximumWorkoutHr);
         btn_back = findViewById(R.id.button_back);
 
-        Bundle bundle = getIntent().getExtras();
-        WorkoutStatistics statistic = bundle.getParcelable("statistics");
+        Intent intent = getIntent();
+        long startTime = intent.getLongExtra(Activity_PulseZonesFitness.START_TIMING, 0);
+        String workoutTime = intent.getStringExtra(Activity_PulseZonesFitness.WORKOUT_TIME);
+        repository = new HRRecordsRepository(this);
 
-        tv_maxWorkoutHr.setText(statistic.getMaxWorkoutHr() + "bpm");
-        tv_averageHr.setText(statistic.getAverageHr() + "bpm");
-        long miliSeconds = statistic.getWorkoutTime();
-        tv_workoutTime.setText(PulseZoneUtils.fromMillisecondsToTime(miliSeconds));
+        tv_maxWorkoutHr.setText(repository.getMaxHeartRate(startTime, SystemClock.elapsedRealtime()) + "bpm");
+        tv_averageHr.setText(repository.getAverageHeartRate(startTime, SystemClock.elapsedRealtime()) + "bpm");
+        tv_workoutTime.setText(workoutTime);
 
         btn_back.setOnClickListener(v -> finish());
     }

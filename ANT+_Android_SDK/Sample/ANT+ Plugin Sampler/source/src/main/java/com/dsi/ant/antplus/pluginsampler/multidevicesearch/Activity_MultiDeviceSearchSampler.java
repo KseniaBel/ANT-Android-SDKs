@@ -9,16 +9,11 @@ All rights reserved.
 
 package com.dsi.ant.antplus.pluginsampler.multidevicesearch;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,12 +34,14 @@ import com.dsi.ant.plugins.antplus.pcc.defines.DeviceType;
 import com.dsi.ant.plugins.antplus.pcc.defines.RequestAccessResult;
 import com.dsi.ant.plugins.antplus.pccbase.MultiDeviceSearch.MultiDeviceSearchResult;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+
 /**
  * Searches for multiple devices on the same channel using the multi-device
  * search interface
  */
-public class Activity_MultiDeviceSearchSampler extends Activity
-{
+public class Activity_MultiDeviceSearchSampler extends Activity {
     /**
      * Relates a MultiDeviceSearchResult with an RSSI value
      */
@@ -78,35 +75,21 @@ public class Activity_MultiDeviceSearchSampler extends Activity
         setContentView(R.layout.activity_multidevice_scan);
 
         mContext = getApplicationContext();
-        mStatus = (TextView) findViewById(R.id.textView_Status);
+        mStatus = findViewById(R.id.textView_Status);
 
-        mFoundDevicesList = (ListView) findViewById(R.id.listView_FoundDevices);
+        mFoundDevicesList = findViewById(R.id.listView_FoundDevices);
 
         mFoundAdapter = new ArrayAdapter_MultiDeviceSearchResult(this, mFoundDevices);
         mFoundDevicesList.setAdapter(mFoundAdapter);
 
-        mFoundDevicesList.setOnItemClickListener(new OnItemClickListener()
-        {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id)
-            {
-                launchConnection(mFoundAdapter.getItem(position).mDevice);
-            }
-        });
+        mFoundDevicesList.setOnItemClickListener((parent, view, position, id) -> launchConnection(mFoundAdapter.getItem(position).mDevice));
 
-        mConnectedDevicesList = (ListView) findViewById(R.id.listView_AlreadyConnectedDevices);
+        mConnectedDevicesList = findViewById(R.id.listView_AlreadyConnectedDevices);
 
         mConnectedAdapter = new ArrayAdapter_MultiDeviceSearchResult(this, mConnectedDevices);
         mConnectedDevicesList.setAdapter(mConnectedAdapter);
 
-        mConnectedDevicesList.setOnItemClickListener(new OnItemClickListener()
-        {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id)
-            {
-                launchConnection(mConnectedAdapter.getItem(position).mDevice);
-            }
-        });
+        mConnectedDevicesList.setOnItemClickListener((parent, view, position, id) -> launchConnection(mConnectedAdapter.getItem(position).mDevice));
 
         Intent i = getIntent();
         Bundle args = i.getBundleExtra(BUNDLE_KEY);
@@ -201,35 +184,25 @@ public class Activity_MultiDeviceSearchSampler extends Activity
             // device they are already using in another app
             if (deviceFound.isAlreadyConnected())
             {
-                runOnUiThread(new Runnable()
-                {
-                    @Override
-                    public void run()
+                runOnUiThread(() -> {
+                    // connected device category is invisible unless there
+                    // are some present
+                    if (mConnectedAdapter.isEmpty())
                     {
-                        // connected device category is invisible unless there
-                        // are some present
-                        if (mConnectedAdapter.isEmpty())
-                        {
-                            findViewById(R.id.textView_AlreadyConnectedTitle).setVisibility(
-                                    View.VISIBLE);
-                            mConnectedDevicesList.setVisibility(View.VISIBLE);
-                        }
-
-                        mConnectedAdapter.add(result);
-                        mConnectedAdapter.notifyDataSetChanged();
+                        findViewById(R.id.textView_AlreadyConnectedTitle).setVisibility(
+                                View.VISIBLE);
+                        mConnectedDevicesList.setVisibility(View.VISIBLE);
                     }
+
+                    mConnectedAdapter.add(result);
+                    mConnectedAdapter.notifyDataSetChanged();
                 });
             }
             else
             {
-                runOnUiThread(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        mFoundAdapter.add(result);
-                        mFoundAdapter.notifyDataSetChanged();
-                    }
+                runOnUiThread(() -> {
+                    mFoundAdapter.add(result);
+                    mFoundAdapter.notifyDataSetChanged();
                 });
             }
         }
@@ -268,20 +241,15 @@ public class Activity_MultiDeviceSearchSampler extends Activity
         @Override
         public void onRssiUpdate(final int resultId, final int rssi)
         {
-            runOnUiThread(new Runnable()
-            {
-                @Override
-                public void run()
+            runOnUiThread(() -> {
+                for (MultiDeviceSearchResultWithRSSI result : mFoundDevices)
                 {
-                    for (MultiDeviceSearchResultWithRSSI result : mFoundDevices)
+                    if (result.mDevice.resultID == resultId)
                     {
-                        if (result.mDevice.resultID == resultId)
-                        {
-                            result.mRSSI = rssi;
-                            mFoundAdapter.notifyDataSetChanged();
+                        result.mRSSI = rssi;
+                        mFoundAdapter.notifyDataSetChanged();
 
-                            break;
-                        }
+                        break;
                     }
                 }
             });

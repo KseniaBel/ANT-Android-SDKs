@@ -59,11 +59,11 @@ public class ArrayAdapter_MultiDeviceSearchResult extends
 
         if (i != null)
         {
-            TextView tv_deviceType = (TextView) convertView
+            TextView tv_deviceType = convertView
                 .findViewById(R.id.textView_multiDeviceType);
-            TextView tv_deviceName = (TextView) convertView
+            TextView tv_deviceName = convertView
                 .findViewById(R.id.textView_multiDeviceName);
-            ProgressBar pb_RSSI = (ProgressBar) convertView
+            ProgressBar pb_RSSI = convertView
                 .findViewById(R.id.progressBar_multiDeviceRSSI);
 
             if (tv_deviceType != null)

@@ -12,14 +12,11 @@ package com.dsi.ant.antplus.pluginsampler.multidevicesearch;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.SparseArray;
 import android.util.SparseBooleanArray;
-import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -53,16 +50,16 @@ public class Activity_MultiDeviceFilter extends Activity
         setContentView(R.layout.activity_multidevice_filter);
 
         mContext = getApplicationContext();
-        mSearch = (Button) findViewById(R.id.button_StartMultiDeviceSearch);
-        mSelectAll = (Button) findViewById(R.id.button_SelectAll);
+        mSearch = findViewById(R.id.button_StartMultiDeviceSearch);
+        mSelectAll = findViewById(R.id.button_SelectAll);
 
-        mListView = (ListView) findViewById(R.id.listView_MultiDeviceFilter);
+        mListView = findViewById(R.id.listView_MultiDeviceFilter);
         mListView.setItemsCanFocus(false);
         mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 
-        mDeviceTypeListAdapter = new ArrayAdapter<String>(this,
+        mDeviceTypeListAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_checked, getResources().getStringArray(
-                        R.array.device_types));
+                R.array.device_types));
         mListView.setAdapter(mDeviceTypeListAdapter);
 
         mIsChecked = mListView.getCheckedItemPositions();
@@ -82,46 +79,36 @@ public class Activity_MultiDeviceFilter extends Activity
         mDeviceTypeList.put(i++, DeviceType.BIKE_SPD);
         mDeviceTypeList.put(i++, DeviceType.STRIDE_SDM);
 
-        mSearch.setOnClickListener(new OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
+        mSearch.setOnClickListener(v -> {
+            EnumSet<DeviceType> set = EnumSet.noneOf(DeviceType.class);
+
+            for (int j = 0; j < mIsChecked.size(); j++)
             {
-                EnumSet<DeviceType> set = EnumSet.noneOf(DeviceType.class);
+                int key = mIsChecked.keyAt(j);
+                if (mIsChecked.get(key))
+                    set.add(mDeviceTypeList.get(key));
+            }
 
-                for (int j = 0; j < mIsChecked.size(); j++)
-                {
-                    int key = mIsChecked.keyAt(j);
-                    if (mIsChecked.get(key))
-                        set.add(mDeviceTypeList.get(key));
-                }
+            if (set.isEmpty())
+            {
+                Toast.makeText(mContext, "Please select device type(s) to filter on.",
+                        Toast.LENGTH_SHORT).show();
 
-                if (set.isEmpty())
-                {
-                    Toast.makeText(mContext, "Please select device type(s) to filter on.",
-                            Toast.LENGTH_SHORT).show();
-
-                } else
-                {
-                    Intent i = new Intent(mContext, Activity_MultiDeviceSearchSampler.class);
-                    Bundle args = new Bundle();
-                    args.putSerializable(Activity_MultiDeviceSearchSampler.FILTER_KEY, set);
-                    i.putExtra(Activity_MultiDeviceSearchSampler.BUNDLE_KEY, args);
-                    // Listen for search stopped results
-                    startActivityForResult(i, Activity_MultiDeviceSearchSampler.RESULT_SEARCH_STOPPED);
-                }
+            } else
+            {
+                Intent i1 = new Intent(mContext, Activity_MultiDeviceSearchSampler.class);
+                Bundle args = new Bundle();
+                args.putSerializable(Activity_MultiDeviceSearchSampler.FILTER_KEY, set);
+                i1.putExtra(Activity_MultiDeviceSearchSampler.BUNDLE_KEY, args);
+                // Listen for search stopped results
+                startActivityForResult(i1, Activity_MultiDeviceSearchSampler.RESULT_SEARCH_STOPPED);
             }
         });
 
-        mSelectAll.setOnClickListener(new OnClickListener()
-        {
-            @Override
-            public void onClick(View arg0)
+        mSelectAll.setOnClickListener(arg0 -> {
+            for (int i12 = 0; i12 < mListView.getCount(); i12++)
             {
-                for (int i = 0; i < mListView.getCount(); i++)
-                {
-                    mListView.setItemChecked(i, true);
-                }
+                mListView.setItemChecked(i12, true);
             }
         });
     }
@@ -162,29 +149,17 @@ public class Activity_MultiDeviceFilter extends Activity
                             + AntPlusHeartRatePcc.getMissingDependencyName()
                             + "\"\n was not found. You need to install the ANT+ Plugins service or you may need to update your existing version if you already have it. Do you want to launch the Play Store to get it?");
                     adlgBldr.setCancelable(true);
-                    adlgBldr.setPositiveButton("Go to Store", new android.content.DialogInterface.OnClickListener()
-                    {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which)
-                        {
-                            Intent startStore = null;
-                            startStore = new Intent(
-                                    Intent.ACTION_VIEW,
-                                    Uri.parse("market://details?id="
-                                            + AntPlusHeartRatePcc.getMissingDependencyPackageName()));
-                            startStore.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    adlgBldr.setPositiveButton("Go to Store", (dialog, which) -> {
+                        Intent startStore = null;
+                        startStore = new Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("market://details?id="
+                                        + AntPlusHeartRatePcc.getMissingDependencyPackageName()));
+                        startStore.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-                            mContext.startActivity(startStore);
-                        }
+                        mContext.startActivity(startStore);
                     });
-                    adlgBldr.setNegativeButton("Cancel", new android.content.DialogInterface.OnClickListener()
-                    {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which)
-                        {
-                            dialog.dismiss();
-                        }
-                    });
+                    adlgBldr.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
 
                     final AlertDialog waitDialog = adlgBldr.create();
                     waitDialog.show();

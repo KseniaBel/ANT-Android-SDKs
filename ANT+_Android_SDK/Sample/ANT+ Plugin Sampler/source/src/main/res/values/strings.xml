@@ -35,7 +35,7 @@ All rights reserved.
     <string name="label_deviceTypeFilter">Select Device Types to Search:</string>
     <string name="label_RSSI">RSSI: </string>
 
-    //Dialog pulse zone settings
+    //Dialog pulse zoneRadioButtonId settings
     <string name="input_data_text_view">Input data:</string>
     <string name="gender_text_view">Gender:</string>
     <string name="female_radio_button">Female</string>
@@ -64,6 +64,7 @@ All rights reserved.
     <string name="heart_rate_value_text_view">---</string>
     <string name="pause_button">Pause</string>
     <string name="stop_button">Stop</string>
+    <string name="graph_data">Heart rate data</string>
 
     //Dialog progress waiter
     <string name="search_device_text_view">Searching for device(s)...</string>

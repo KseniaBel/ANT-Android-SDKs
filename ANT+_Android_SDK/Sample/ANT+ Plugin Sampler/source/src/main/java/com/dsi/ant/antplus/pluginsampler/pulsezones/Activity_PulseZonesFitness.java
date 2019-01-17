@@ -44,6 +44,8 @@ import java.util.logging.Logger;
  */
 
 public class Activity_PulseZonesFitness extends Activity {
+    public static final String START_TIMING = "startTiming";
+    public static final String WORKOUT_TIME = "workoutTime";
     private AntPlusHeartRatePcc hrPcc = null;
     private PccReleaseHandle<AntPlusHeartRatePcc> releaseHandle = null;
     private Logger logger = Logger.getLogger(this.getClass().getName());
@@ -70,7 +72,7 @@ public class Activity_PulseZonesFitness extends Activity {
 
         pulseSettings = new PulseZoneSettings(this.getApplicationContext());
         logger.info("Restore setting: " + pulseSettings.toString());
-        pulseLimits = PulseZoneUtils.calculateZonePulse(pulseSettings.getRestHr(), pulseSettings.getMaxHr(), pulseSettings.getZoneId());
+        pulseLimits = PulseZoneUtils.calculateZonePulse(pulseSettings);
         logger.info("low: " + pulseLimits.getLowPulseLimit() + " high: " + pulseLimits.getHighPulseLimit());
         readingsBuffer = Collections.synchronizedList(new ArrayList<>());
 
@@ -105,10 +107,8 @@ public class Activity_PulseZonesFitness extends Activity {
         btn_stop.setOnClickListener(view -> {
             unsubscribeToHrEvents();
             Intent intent = new Intent(this, Activity_WorkoutStatistics.class);
-            int maxWorkoutHr = repository.getMaxHeartRate();
-            int averageHr = repository.getAverageHeartRate();
-            long workoutTime = repository.getWorkoutTime();
-            intent.putExtra("statistics", new WorkoutStatistics(maxWorkoutHr, averageHr, workoutTime));
+            intent.putExtra(START_TIMING, chronometer.getStartTime());
+            intent.putExtra(WORKOUT_TIME, chronometer.getText());
             startActivity(intent);
             finish();
         });
@@ -310,7 +310,7 @@ public class Activity_PulseZonesFitness extends Activity {
                 switch(resultCode) {
                     case SUCCESS:
                         hrPcc = result;
-                        tv_status.setText("Pulse range: " + pulseLimits.getLowPulseLimit() + "-" + pulseLimits.getHighPulseLimit());
+                        tv_status.setText(String.format("Pulse range: %d-%d", pulseLimits.getLowPulseLimit(), pulseLimits.getHighPulseLimit()));
                         subscribeToHrEvents();
                         break;
                     case CHANNEL_NOT_AVAILABLE:
@@ -366,11 +366,12 @@ public class Activity_PulseZonesFitness extends Activity {
      */
     @Override
     protected void onDestroy() {
-        List<Runnable> list = service.shutdownNow();
-        logger.fine("Scheduled events are skiped: " + list.size());
+        if(!(service == null) ) {
+            List<Runnable> list = service.shutdownNow();
+            logger.fine("Scheduled events are skipped: " + list.size());
+        }
         chronometer.stop();
         repository.closeDb();
-        this.deleteDatabase("fitness_activity_database");
         releaseHandle.close();
         super.onDestroy();
     }
