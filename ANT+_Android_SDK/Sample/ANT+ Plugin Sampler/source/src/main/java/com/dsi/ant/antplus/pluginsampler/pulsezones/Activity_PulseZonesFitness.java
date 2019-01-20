@@ -10,6 +10,7 @@ import android.support.annotation.NonNull;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.dsi.ant.antplus.pluginsampler.R;
 import com.dsi.ant.antplus.pluginsampler.multidevicesearch.Activity_MultiDeviceSearchSampler;
@@ -33,9 +34,11 @@ import com.github.mikephil.charting.utils.ColorTemplate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,20 +52,32 @@ public class Activity_PulseZonesFitness extends Activity {
     private AntPlusHeartRatePcc hrPcc = null;
     private PccReleaseHandle<AntPlusHeartRatePcc> releaseHandle = null;
     private Logger logger = Logger.getLogger(this.getClass().getName());
-
     private TextView tv_status;
+
     private TextView tv_heartRate;
     private ImageButton btn_pauseResume;
     private ImageButton btn_stop;
-
     private List<Integer> readingsBuffer;
+
     private ScheduledExecutorService service;
     private LineChart graph;
-
     private HRRecordsRepository repository;
+
     private PulseZoneSettings pulseSettings;
     private CustomChronometer chronometer;
     private PulseLimits pulseLimits;
+
+    private final View.OnClickListener PAUSE_RESUME_ACTION = view -> {
+        if (!chronometer.isRunning() && DeviceState.TRACKING.equals(hrPcc.getCurrentDeviceState())) {
+            subscribeToHrEvents();
+            btn_pauseResume.setImageResource(R.drawable.pause_button2);
+            btn_stop.setVisibility(View.GONE);
+        }else{
+            unsubscribeToHrEvents();
+            btn_pauseResume.setImageResource(R.drawable.play_button2);
+            btn_stop.setVisibility(View.VISIBLE);
+        }
+    };
 
 
     @Override
@@ -92,17 +107,7 @@ public class Activity_PulseZonesFitness extends Activity {
         repository = new HRRecordsRepository(this);
         handleReset();
 
-        btn_pauseResume.setOnClickListener(view -> {
-            if (chronometer.isRunning()) {
-                unsubscribeToHrEvents();
-                btn_pauseResume.setImageResource(R.drawable.play_button2);
-                btn_stop.setVisibility(View.VISIBLE);
-            }else{
-                subscribeToHrEvents();
-                btn_pauseResume.setImageResource(R.drawable.pause_button2);
-                btn_stop.setVisibility(View.GONE);
-            }
-        });
+        btn_pauseResume.setOnClickListener(PAUSE_RESUME_ACTION);
 
         btn_stop.setOnClickListener(view -> {
             unsubscribeToHrEvents();
@@ -277,10 +282,12 @@ public class Activity_PulseZonesFitness extends Activity {
         int sum = 0;
         //calculate the average of the readings from shared readingBuffer in synchronized way
         synchronized (readingsBuffer) {
-            for(Integer i : readingsBuffer) {
-                sum += i;
-            }
-            computedHeartRate = Math.round(sum/readingsBuffer.size());
+                for(Integer i : readingsBuffer) {
+                    sum += i;
+                }
+                computedHeartRate = Math.round(sum/readingsBuffer.size());
+                readingsBuffer.clear();
+
         }
         // Mark heart rate with asterisk if zero detected
         final String textHeartRate = String.valueOf(computedHeartRate);
@@ -306,6 +313,7 @@ public class Activity_PulseZonesFitness extends Activity {
      */
     protected IPluginAccessResultReceiver<AntPlusHeartRatePcc> base_IPluginAccessResultReceiver =
             (result, resultCode, initialDeviceState) -> {
+        logger.info(String.format("result: %s, resultCode: %s, initialDeviceState: %s", result == null ? "null" : result.toString(), resultCode.toString(), initialDeviceState.toString()));
                 tv_status.setText(R.string.connection_string);
                 switch(resultCode) {
                     case SUCCESS:
@@ -344,7 +352,11 @@ public class Activity_PulseZonesFitness extends Activity {
      */
     protected  IDeviceStateChangeReceiver base_IDeviceStateChangeReceiver =
             (DeviceState newDeviceState) ->
-                    runOnUiThread(() -> logger.log(Level.INFO, hrPcc.getDeviceName() + ": " + newDeviceState));
+                    runOnUiThread(() -> {
+                        logger.log(Level.INFO, hrPcc.getDeviceName() + ": " + newDeviceState);
+                        PAUSE_RESUME_ACTION.onClick(null);
+                        Toast.makeText(this, "Device status changed: " + newDeviceState, Toast.LENGTH_SHORT).show();
+                    });
 
     protected void requestAccessToPcc() {
         Intent intent = getIntent();
@@ -372,7 +384,7 @@ public class Activity_PulseZonesFitness extends Activity {
         }
         chronometer.stop();
         repository.closeDb();
-        releaseHandle.close();
+        hrPcc.releaseAccess();
         super.onDestroy();
     }
 }
