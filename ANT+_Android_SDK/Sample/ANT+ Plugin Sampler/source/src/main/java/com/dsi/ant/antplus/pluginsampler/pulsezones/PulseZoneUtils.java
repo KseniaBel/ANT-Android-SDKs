@@ -1,5 +1,7 @@
 package com.dsi.ant.antplus.pluginsampler.pulsezones;
 
+import com.dsi.ant.antplus.pluginsampler.R;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -10,24 +12,30 @@ public class PulseZoneUtils {
     /**
      * Calculates the low and high limit of particular pulse zone
      */
-    public static PulseLimits calculateZonePulse(int restHr, int maxHr, int zone) {
-        int hrReserve = maxHr - restHr;
-        int lowPulseLimit, highPulseLimit;
-        if(zone == 1) {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.4);
-            highPulseLimit = (int)Math.round(restHr + hrReserve*0.51);
-        } else if(zone == 2) {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.52);
-            highPulseLimit = (int)Math.round(restHr + hrReserve*0.63);
-        } else if(zone == 3) {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.64);
-            highPulseLimit = (int)Math.round(restHr + hrReserve*0.75);
-        } else if(zone == 4) {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.76);
-            highPulseLimit = (int)Math.round(restHr + hrReserve*0.87);
-        } else {
-            lowPulseLimit = (int)Math.round(restHr + hrReserve*0.88);
-            highPulseLimit = maxHr;
+    public static PulseLimits calculateZonePulse(PulseZoneSettings settings) {
+        int hrReserve = settings.getMaxHr() - settings.getRestHr();
+        int lowPulseLimit = 0, highPulseLimit = 0;
+        switch(settings.getZoneRadioButtonId()) {
+            case R.id.radioButton_Zone1:
+                lowPulseLimit = (int)Math.round(settings.getRestHr() + hrReserve*0.4);
+                highPulseLimit = (int)Math.round(settings.getRestHr() + hrReserve*0.51);
+                break;
+            case R.id.radioButton_Zone2:
+                lowPulseLimit = (int)Math.round(settings.getRestHr()+ hrReserve*0.52);
+                highPulseLimit = (int)Math.round(settings.getRestHr() + hrReserve*0.63);
+                break;
+            case R.id.radioButton_Zone3:
+                lowPulseLimit = (int)Math.round(settings.getRestHr() + hrReserve*0.64);
+                highPulseLimit = (int)Math.round(settings.getRestHr() + hrReserve*0.75);
+                break;
+            case R.id.radioButton_Zone4:
+                lowPulseLimit = (int)Math.round(settings.getRestHr() + hrReserve*0.76);
+                highPulseLimit = (int)Math.round(settings.getRestHr() + hrReserve*0.87);
+                break;
+            case R.id.radioButton_Zone5:
+                lowPulseLimit = (int)Math.round(settings.getRestHr() + hrReserve*0.88);
+                highPulseLimit = settings.getMaxHr();
+                break;
         }
         return new PulseLimits(lowPulseLimit, highPulseLimit);
     }

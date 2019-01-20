@@ -13,6 +13,7 @@ public class CustomChronometer extends Chronometer {
     private boolean isRunning = false;
     private int totalElapsedTime;
     private long lastStopTime = 0;
+    private long startTime;
 
     /**
      * Initialization of CustomChronometer
@@ -51,7 +52,8 @@ public class CustomChronometer extends Chronometer {
         super.start();
         //on start
         if (lastStopTime == 0) {
-            setBase(SystemClock.elapsedRealtime());
+            startTime = SystemClock.elapsedRealtime();
+            setBase(startTime);
             // on resume after pause
         } else {
             long intervalOnPause = (SystemClock.elapsedRealtime() - lastStopTime);
@@ -74,8 +76,16 @@ public class CustomChronometer extends Chronometer {
      * @return total elapsed time in seconds
      */
     public int getElapsedTime() {
-        totalElapsedTime = (int)(totalElapsedTime + SystemClock.elapsedRealtime() - getBase())/1000;
-        return totalElapsedTime;
+        totalElapsedTime = (int)(SystemClock.elapsedRealtime() - getBase());
+        return totalElapsedTime/1000;
+    }
+
+    public long getLastStopTime() {
+        return lastStopTime;
+    }
+
+    public long getStartTime() {
+        return startTime;
     }
 
     /**

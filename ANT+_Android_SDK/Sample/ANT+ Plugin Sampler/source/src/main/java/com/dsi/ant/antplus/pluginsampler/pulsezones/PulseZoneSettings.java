@@ -13,11 +13,11 @@ import java.util.Arrays;
 
 public class PulseZoneSettings {
     private static final String PARAM_APP_PREFERENCES = "prefID";
-    private int gender;
+    private int genderRadioButtonId;
     private int age;
     private int restHr;
     private int maxHr;
-    private int zone;
+    private int zoneRadioButtonId;
     private SharedPreferences sharedPreferences;
 
     /**
@@ -26,19 +26,19 @@ public class PulseZoneSettings {
      */
     public PulseZoneSettings(Context context) {
         sharedPreferences = context.getSharedPreferences(PARAM_APP_PREFERENCES, Context.MODE_PRIVATE);
-        this.gender = Preferences.getUserSex(sharedPreferences);
+        this.genderRadioButtonId = Preferences.getUserSex(sharedPreferences);
         this.age = Preferences.getAge(sharedPreferences);
         this.restHr = Preferences.getRestHr(sharedPreferences);
         this.maxHr = Preferences.getMaxHr(sharedPreferences);
-        this.zone = Preferences.getPulseZone(sharedPreferences);
+        this.zoneRadioButtonId = Preferences.getPulseZone(sharedPreferences);
     }
 
     /**
-     * Setts gender
-     * @param gender - gender int value
+     * Setts genderRadioButtonId
+     * @param genderRadioButtonId - genderRadioButtonId int value
      */
-    public void setGender(int gender) {
-        this.gender = gender;
+    public void setGenderRadioButtonId(int genderRadioButtonId) {
+        this.genderRadioButtonId = genderRadioButtonId;
     }
 
     /**
@@ -66,42 +66,28 @@ public class PulseZoneSettings {
     }
 
     /**
-     * Sets heart rate zone
-     * @param zone - heart rate zone int value
+     * Sets heart rate zoneRadioButtonId
+     * @param zoneRadioButtonId - heart rate zoneRadioButtonId int value
      */
-    public void setZone(int zone) {
-        this.zone = zone;
+    public void setZoneRadioButtonId(int zoneRadioButtonId) {
+        this.zoneRadioButtonId = zoneRadioButtonId;
     }
 
     /**
-     * Returns if gender is Female
-     * @return - true, if gender is female, false, if gender is male
+     * Returns if genderRadioButtonId is Female
+     * @return - true, if genderRadioButtonId is female, false, if genderRadioButtonId is male
      */
     public boolean isFemale() {
-        return gender == R.id.radioButton_Female;
+        return genderRadioButtonId == R.id.radioButton_Female;
     }
 
-    /**
-     * returns zone number
-     * @return - number of pulse zone
-     */
-    public int getZoneId() {
-        switch (zone) {
-            case R.id.radioButton_Zone1: return 1;
-            case R.id.radioButton_Zone2: return 2;
-            case R.id.radioButton_Zone3: return 3;
-            case R.id.radioButton_Zone4: return 4;
-            case R.id.radioButton_Zone5: return 5;
-            default: return 1;
-        }
-    }
 
     /**
-     * Getter method for gender
-     * @return - gender
+     * Getter method for genderRadioButtonId
+     * @return - genderRadioButtonId
      */
-    public int getGender() {
-        return gender;
+    public int getGenderRadioButtonId() {
+        return genderRadioButtonId;
     }
 
     /**
@@ -129,30 +115,30 @@ public class PulseZoneSettings {
     }
 
     /**
-     * Getter method for pulse zone
-     * @return - pulse zone
+     * Getter method for pulse zoneRadioButtonId
+     * @return - pulse zoneRadioButtonId
      */
-    public int getZone() {
-        return zone;
+    public int getZoneRadioButtonId() {
+        return zoneRadioButtonId;
     }
 
     /**
-     * Saves values of gender, age. rest hr, maximum hr, pulse zone in shared preferences
+     * Saves values of genderRadioButtonId, age. rest hr, maximum hr, pulse zoneRadioButtonId in shared preferences
      */
     public void save() {
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putInt(Preferences.USER_SEX_KEY.toString(), gender);
+        editor.putInt(Preferences.USER_SEX_KEY.toString(), genderRadioButtonId);
         editor.putInt(Preferences.AGE_KEY.toString(), age);
         editor.putInt(Preferences.REST_HR_KEY.toString(), restHr);
         this.maxHr = maxHr == 0 ? PulseZoneUtils.calculateMaxHrFieldValue(age, isFemale()) : maxHr;
         editor.putInt(Preferences.MAX_HR_KEY.toString(), maxHr);
-        editor.putInt(Preferences.PULSE_ZONE_KEY.toString(), zone);
+        editor.putInt(Preferences.PULSE_ZONE_KEY.toString(), zoneRadioButtonId);
         editor.apply();
    }
 
     @Override
     public String toString(){
-        return Arrays.asList(gender, age, restHr, maxHr, zone).toString();
+        return Arrays.asList(genderRadioButtonId, age, restHr, maxHr, zoneRadioButtonId).toString();
     }
 
     enum Preferences {
